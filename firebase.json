@@ -4,5 +4,19 @@
     "indexes": "firestore.indexes.json",
     "database": "(default)",
     "location": "southamerica-east1"
+  },
+  "hosting": {
+    "site": "redline-fit-academia",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "firestore.rules",
+      "firestore.indexes.json",
+      "**/.*",
+      ".git/**",
+      "**/.git/**",
+      "**/node_modules/**",
+      "README.md"
+    ]
   }
 }
