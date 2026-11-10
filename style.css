@@ -2635,27 +2635,28 @@ button {
 
   /* Header Mobile Otimizado (sem estouro lateral e sem cortar o título) */
   .header-inner {
-    min-height: 60px;
+    min-height: 58px;
     height: auto;
     padding: 8px 0;
     gap: 8px;
+    flex-wrap: nowrap;
   }
 
   .brand {
-    gap: 8px;
-    min-width: 0;
+    gap: 7px;
+    flex-shrink: 0;
   }
 
   .brand-logo {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     border-radius: 8px;
   }
 
   .brand-title {
-    font-size: 1.05rem;
+    font-size: 0.96rem;
     white-space: nowrap;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
   }
 
   .brand-subtitle {
@@ -2663,30 +2664,35 @@ button {
   }
 
   .header-actions {
-    gap: 6px;
+    gap: 5px;
     flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  #btnInstallPwaHeader span {
+    display: none !important;
   }
 
   .active-user-pill {
-    padding: 5px 9px;
-    font-size: 0.74rem;
+    padding: 5px 8px;
+    font-size: 0.72rem;
     gap: 5px;
   }
 
   .streak-badge {
-    padding: 5px 9px;
-    font-size: 0.74rem;
+    padding: 5px 8px;
+    font-size: 0.72rem;
     gap: 4px;
   }
 
   .icon-flame {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
   }
 
   .header-actions .btn-sm {
-    padding: 6px 9px;
-    font-size: 0.74rem;
+    padding: 6px 8px;
+    font-size: 0.72rem;
   }
 
   /* Login Mobile */
@@ -3021,8 +3027,12 @@ button {
   }
 }
 
-@media (max-width: 380px) {
+@media (max-width: 480px) {
   .btn-logout-header span {
+    display: none;
+  }
+
+  .streak-badge {
     display: none;
   }
 }

@@ -54,6 +54,15 @@
             <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
           </svg>
         </button>
+
+        <button type="button" class="btn-outline-red btn-lg hidden" id="btnInstallPwaLogin" style="margin-top: 10px; width: 100%; justify-content: center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="18" height="18">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span>INSTALAR APLICATIVO NO APARELHO</span>
+        </button>
       </form>
     </div>
   </div>
@@ -72,6 +81,15 @@
       </div>
 
       <div class="header-actions">
+        <button class="btn-outline-red btn-sm hidden" id="btnInstallPwaHeader" type="button" title="Instalar o aplicativo REDLINE FIT no aparelho">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span class="hide-mobile">Baixar App</span>
+        </button>
+
         <div class="active-user-pill" id="activeUserPill" title="Usuário conectado • Sincronizado em tempo real na nuvem Firebase">
           <span class="user-dot" id="cloudSyncDot"></span>
           <span id="headerActiveUserName">Atleta</span>
@@ -867,6 +885,48 @@
     } catch (err) {
       console.error("Erro ao inicializar Firebase Cloud Sync:", err);
     }
+  </script>
+  <script>
+    // Registro do Service Worker (Obrigatório para instalação PWA rápida no Chrome / Android / Desktop)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((err) => {
+          console.warn('Service Worker:', err);
+        });
+      });
+    }
+
+    // Controle nativo do botão "Instalar Aplicativo / Baixar App" (beforeinstallprompt)
+    let deferredInstallPrompt = null;
+    const btnInstallLogin = document.getElementById('btnInstallPwaLogin');
+    const btnInstallHeader = document.getElementById('btnInstallPwaHeader');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      if (btnInstallLogin) btnInstallLogin.classList.remove('hidden');
+      if (btnInstallHeader) btnInstallHeader.classList.remove('hidden');
+    });
+
+    async function triggerPwaInstall() {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      if (outcome === 'accepted') {
+        if (btnInstallLogin) btnInstallLogin.classList.add('hidden');
+        if (btnInstallHeader) btnInstallHeader.classList.add('hidden');
+      }
+      deferredInstallPrompt = null;
+    }
+
+    if (btnInstallLogin) btnInstallLogin.addEventListener('click', triggerPwaInstall);
+    if (btnInstallHeader) btnInstallHeader.addEventListener('click', triggerPwaInstall);
+
+    window.addEventListener('appinstalled', () => {
+      if (btnInstallLogin) btnInstallLogin.classList.add('hidden');
+      if (btnInstallHeader) btnInstallHeader.classList.add('hidden');
+      deferredInstallPrompt = null;
+    });
   </script>
 </body>
 </html>
