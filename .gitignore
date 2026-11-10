@@ -10,3 +10,7 @@ desktop.ini
 *.swo
 *.bat
 
+# Netlify
+.netlify
+
+
