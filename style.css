@@ -3036,3 +3036,300 @@ button {
     display: none;
   }
 }
+
+/* ==========================================================================
+   CALENDÁRIO MENSAL DE FREQUÊNCIA (VERDE / VERMELHO)
+   ========================================================================== */
+
+.monthly-calendar-section {
+  margin-top: 24px;
+  margin-bottom: 36px;
+}
+
+.monthly-calendar-card {
+  padding: 24px 22px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-md);
+}
+
+.monthly-calendar-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.cal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.cal-month-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 0.04em;
+}
+
+.cal-stats-badge {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid var(--done-border);
+  color: var(--done-green);
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.cal-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cal-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-obsidian);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+
+.cal-legend-item {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cal-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.cal-dot-done {
+  background: var(--done-green);
+  box-shadow: 0 0 8px var(--done-green);
+}
+
+.cal-dot-missed {
+  background: var(--red-primary);
+  box-shadow: 0 0 8px var(--red-primary);
+}
+
+.cal-dot-today {
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+.cal-nav-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-cal-nav {
+  background: var(--bg-obsidian);
+  border: 1px solid var(--border-light);
+  color: #fff;
+  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cal-nav:hover {
+  background: var(--bg-elevated);
+  border-color: var(--red-primary);
+}
+
+.btn-cal-today {
+  width: auto;
+  padding: 0 12px;
+  font-size: 0.78rem;
+  font-family: var(--font-sans);
+}
+
+.calendar-grid-container {
+  width: 100%;
+  background: var(--bg-obsidian);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+}
+
+.cal-weekdays-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.cal-weekdays-header span {
+  font-family: var(--font-display);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.cal-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.cal-day-cell {
+  min-height: 52px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  user-select: none;
+}
+
+.cal-day-cell:hover:not(.cal-day-empty) {
+  transform: translateY(-2px);
+}
+
+.cal-day-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 3px;
+}
+
+/* Verde: Fez no dia */
+.cal-day-done {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1.5px solid var(--done-border);
+  color: var(--done-green);
+}
+
+.cal-day-done .cal-day-indicator {
+  background: var(--done-green);
+  box-shadow: 0 0 6px var(--done-green);
+}
+
+/* Vermelho: Não fez */
+.cal-day-missed {
+  background: rgba(255, 30, 56, 0.1);
+  border: 1.5px solid var(--red-border);
+  color: #ff6b7d;
+}
+
+.cal-day-missed .cal-day-indicator {
+  background: var(--red-primary);
+  box-shadow: 0 0 6px var(--red-primary);
+}
+
+/* Hoje */
+.cal-day-is-today {
+  border: 2px solid var(--red-primary) !important;
+  box-shadow: 0 0 14px var(--red-glow);
+}
+
+/* Futuro */
+.cal-day-future {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+
+.cal-day-future .cal-day-indicator {
+  background: transparent;
+}
+
+.cal-day-selected {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.cal-day-empty {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.cal-selected-day-banner {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: rgba(255, 30, 56, 0.08);
+  border: 1px solid var(--red-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.week-day-num-tag {
+  font-size: 0.72rem;
+  color: var(--red-bright);
+  margin-left: 4px;
+}
+
+@media (max-width: 640px) {
+  .calendar-grid-container {
+    padding: 10px 8px;
+  }
+
+  .cal-weekdays-header {
+    gap: 4px;
+  }
+
+  .cal-weekdays-header span {
+    font-size: 0.65rem;
+  }
+
+  .cal-days-grid {
+    gap: 4px;
+  }
+
+  .cal-day-cell {
+    min-height: 42px;
+    font-size: 0.88rem;
+    border-radius: 8px;
+  }
+
+  .cal-header-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .cal-legend {
+    width: 100%;
+    justify-content: space-between;
+    padding: 6px 10px;
+  }
+
+  .cal-legend-item {
+    font-size: 0.68rem;
+  }
+}
+

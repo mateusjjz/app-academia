@@ -1983,6 +1983,57 @@ function getDefaultDaySplitMap() {
   };
 }
 
+function getWeekDayDate(dayOrder, refDate = new Date()) {
+  const d = new Date(refDate);
+  const jsDay = d.getDay(); // 0 is Dom, 1 is Seg, ... 6 is Sáb
+  const currentOrder = jsDay === 0 ? 7 : jsDay;
+  const diff = dayOrder - currentOrder;
+  const target = new Date(d);
+  target.setDate(d.getDate() + diff);
+  return target;
+}
+
+function formatDateShort(dateObj) {
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  return `${day}/${month}`;
+}
+
+function formatDateIso(dateObj) {
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function checkAndAutoRolloverWeek() {
+  const mondayDate = getWeekDayDate(1);
+  const mondayIso = formatDateIso(mondayDate);
+
+  if (!appState.profile.lastWeekMonday) {
+    appState.profile.lastWeekMonday = mondayIso;
+    saveState();
+    return;
+  }
+
+  // Se a segunda-feira da semana atual for diferente da última registrada, virou a semana!
+  if (appState.profile.lastWeekMonday !== mondayIso) {
+    console.log('🔄 Virada de semana detectada! Reiniciando dias para a nova semana:', mondayIso);
+    appState.profile.lastWeekMonday = mondayIso;
+    appState.exerciseProgress = {};
+    appState.dayStatusOverride = {};
+    appState.activeDayKey = getCurrentSystemWeekdayKey();
+    saveState();
+  }
+}
+
+let calendarViewingDate = new Date();
+
+const MONTH_NAMES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
+
 // Usuários Autorizados do Sistema
 const USERS_CREDENTIALS = {
   simone: {
@@ -2605,9 +2656,26 @@ function markDayAsMissedOrReset(dayKey = appState.activeDayKey) {
   });
 
   appState.dayStatusOverride[dayKey] = 'missed';
+
+  const targetDate = getWeekDayDate(dayObj.order);
+  const dateIso = formatDateIso(targetDate);
+  const dateStr = formatDateShort(targetDate);
+
+  // Registra no histórico para marcar vermelho no calendário
+  appState.workoutHistory = appState.workoutHistory.filter(h => h.dateIso !== dateIso);
+  appState.workoutHistory.unshift({
+    title: `${dayObj.label} — Não Treinou`,
+    locationLabel: plan.label,
+    date: dateStr,
+    dateIso,
+    status: 'missed',
+    doneCount: 0,
+    totalCount: 0
+  });
+
   saveState();
   renderDashboard();
-  showToast(`✗ ${dayObj.label} marcado como "NÃO FEZ" (0 exercícios concluídos).`);
+  showToast(`✗ [${dateStr}] ${dayObj.label} marcado como "NÃO FEZ" (0 exercícios concluídos).`);
 }
 
 function resetEntireWeek() {
@@ -2636,6 +2704,9 @@ function renderDashboard() {
 
   dashboardSection.classList.remove('hidden');
   btnCloseSetup.classList.remove('hidden');
+
+  // Verifica automaticamente se virou a semana (Segunda-feira) para renovar os dias
+  checkAndAutoRolloverWeek();
 
   const plan = getActivePlan();
   const daySummary = getDayStatusSummary(appState.activeDayKey, plan);
@@ -2726,8 +2797,8 @@ function renderDashboard() {
   // Lista de Exercícios do Dia Selecionado
   renderExercisesList(split, goalKey);
 
-  // Histórico de Peso e de Treinos
-  renderHistories();
+  // Calendário Mensal de Frequência (Verde / Vermelho)
+  renderMonthlyCalendar();
 }
 
 function renderMuscleMapHUD(split) {
@@ -2877,6 +2948,10 @@ function renderWeekDaysGrid(plan) {
     const isSelected = day.key === appState.activeDayKey;
     const shortFocus = summary.split.tabName.replace(/^Treino\s+[A-D]\s*/i, '').replace(/[()]/g, '') || summary.split.tabName;
 
+    // Número real da data deste dia da semana (ex: 09/11, 10/11)
+    const dayDate = getWeekDayDate(day.order);
+    const dayDateFormatted = formatDateShort(dayDate);
+
     const card = document.createElement('div');
     card.className = `week-day-card day-status-${summary.status} ${isSelected ? 'is-active-day' : ''} ${summary.isToday ? 'is-today-day' : ''}`;
     card.setAttribute('role', 'tab');
@@ -2884,7 +2959,7 @@ function renderWeekDaysGrid(plan) {
 
     card.innerHTML = `
       <div class="week-day-top">
-        <span class="week-day-name">${day.short}</span>
+        <span class="week-day-name">${day.short} <span class="week-day-num-tag">${dayDateFormatted}</span></span>
         ${summary.isToday ? '<span class="today-pill">HOJE</span>' : `<span class="week-day-split-tag">TREINO ${summary.split.id}</span>`}
       </div>
 
@@ -2956,24 +3031,27 @@ function completeAllExercisesForDay(dayKey = appState.activeDayKey) {
 
   appState.dayStatusOverride[dayKey] = 'done';
 
-  const nowStr = new Date().toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const targetDate = getWeekDayDate(dayObj.order);
+  const dateIso = formatDateIso(targetDate);
+  const dateStr = formatDateShort(targetDate);
+  const nowHour = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  // Remove registro anterior para este mesmo dia se houver
+  appState.workoutHistory = appState.workoutHistory.filter(h => h.dateIso !== dateIso);
 
   appState.workoutHistory.unshift({
     title: `${dayObj.label} — ${split.title}`,
     locationLabel: plan.label,
-    date: nowStr,
+    date: `${dateStr}, ${nowHour}`,
+    dateIso,
+    status: 'done',
     doneCount: totalCount,
     totalCount
   });
 
   saveState();
   renderDashboard();
-  showToast(`🏆 ${dayObj.label} (${split.tabName}) marcado como FEITO!`);
+  showToast(`🏆 [${dateStr}] ${dayObj.label} marcado como FEITO!`);
 }
 
 function renderSplitTabs(plan) {
@@ -3279,51 +3357,170 @@ function recordWeightIfChanged(newWeightKg) {
   }
 }
 
+function renderMonthlyCalendar() {
+  const monthTitleEl = document.getElementById('calMonthTitle');
+  const statsBadgeEl = document.getElementById('calMonthStatsBadge');
+  const daysGridEl = document.getElementById('calDaysGrid');
+  const selectedDayTextEl = document.getElementById('calSelectedDayText');
+
+  if (!monthTitleEl || !daysGridEl) return;
+
+  const currentYear = calendarViewingDate.getFullYear();
+  const currentMonth = calendarViewingDate.getMonth(); // 0 a 11
+  monthTitleEl.textContent = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
+
+  const today = new Date();
+  const todayIso = formatDateIso(today);
+
+  // Mapeamento dos treinos por data ISO (YYYY-MM-DD)
+  const historyByDate = {};
+  if (Array.isArray(appState.workoutHistory)) {
+    appState.workoutHistory.forEach(item => {
+      if (item.dateIso) {
+        if (!historyByDate[item.dateIso] || item.status === 'done' || item.doneCount > 0) {
+          historyByDate[item.dateIso] = item;
+        }
+      }
+    });
+  }
+
+  // Sincroniza também os dias da semana corrente (Segunda a Domingo)
+  const plan = getActivePlan();
+  WEEKDAYS_SCHEMA.forEach(day => {
+    const dayDate = getWeekDayDate(day.order, today);
+    const dayIso = formatDateIso(dayDate);
+    const summary = getDayStatusSummary(day.key, plan);
+
+    if (summary.status === 'done') {
+      if (!historyByDate[dayIso] || historyByDate[dayIso].status !== 'done') {
+        historyByDate[dayIso] = {
+          dateIso: dayIso,
+          title: `${day.label} — ${summary.split.title}`,
+          status: 'done',
+          doneCount: summary.done,
+          totalCount: summary.total
+        };
+      }
+    } else if (summary.status === 'missed') {
+      if (!historyByDate[dayIso]) {
+        historyByDate[dayIso] = {
+          dateIso: dayIso,
+          title: `${day.label} — Não treinou`,
+          status: 'missed',
+          doneCount: 0,
+          totalCount: summary.total
+        };
+      }
+    }
+  });
+
+  // Primeiro dia do mês e total de dias no mês
+  const firstDayObj = new Date(currentYear, currentMonth, 1);
+  // No Brasil consideramos a semana começando na Segunda (0) até Domingo (6)
+  const firstDayWeekIndex = (firstDayObj.getDay() + 6) % 7; 
+  const totalDaysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  let doneCountThisMonth = 0;
+  let missedCountThisMonth = 0;
+
+  let gridHtml = '';
+
+  // Células em branco antes do dia 1
+  for (let i = 0; i < firstDayWeekIndex; i++) {
+    gridHtml += `<div class="cal-day-cell cal-day-empty"></div>`;
+  }
+
+  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+
+  for (let dayNum = 1; dayNum <= totalDaysInMonth; dayNum++) {
+    const dayDate = new Date(currentYear, currentMonth, dayNum);
+    const dayIso = formatDateIso(dayDate);
+    const dayTime = dayDate.getTime();
+
+    const isToday = dayIso === todayIso;
+    const isFuture = dayTime > todayMidnight;
+    const isPast = dayTime < todayMidnight;
+
+    const record = historyByDate[dayIso];
+    let cellStatus = 'empty';
+    let cellClass = '';
+
+    if (record) {
+      if (record.status === 'done' || record.doneCount > 0) {
+        cellStatus = 'done';
+        cellClass = 'cal-day-done';
+        doneCountThisMonth++;
+      } else {
+        cellStatus = 'missed';
+        cellClass = 'cal-day-missed';
+        missedCountThisMonth++;
+      }
+    } else if (isFuture) {
+      cellStatus = 'future';
+      cellClass = 'cal-day-future';
+    } else if (isToday) {
+      cellStatus = 'today-pending';
+      cellClass = 'cal-day-today-pending';
+    } else if (isPast) {
+      // Dia passado sem registro de treino
+      cellStatus = 'missed';
+      cellClass = 'cal-day-missed';
+      missedCountThisMonth++;
+    }
+
+    if (isToday) {
+      cellClass += ' cal-day-is-today';
+    }
+
+    gridHtml += `
+      <div class="cal-day-cell ${cellClass}" data-date-iso="${dayIso}" data-day="${dayNum}" data-status="${cellStatus}" title="${dayNum}/${currentMonth + 1}/${currentYear}">
+        <span>${dayNum}</span>
+        <span class="cal-day-indicator"></span>
+      </div>
+    `;
+  }
+
+  daysGridEl.innerHTML = gridHtml;
+
+  // Atualiza Badge do Mês
+  if (statsBadgeEl) {
+    if (doneCountThisMonth > 0 || missedCountThisMonth > 0) {
+      statsBadgeEl.textContent = `${doneCountThisMonth} feito${doneCountThisMonth === 1 ? '' : 's'} • ${missedCountThisMonth} falta${missedCountThisMonth === 1 ? '' : 's'}`;
+    } else {
+      statsBadgeEl.textContent = '0 treinos neste mês';
+    }
+  }
+
+  // Interatividade de clique nos dias do calendário
+  daysGridEl.querySelectorAll('.cal-day-cell:not(.cal-day-empty)').forEach(cell => {
+    cell.addEventListener('click', () => {
+      daysGridEl.querySelectorAll('.cal-day-cell').forEach(c => c.classList.remove('cal-day-selected'));
+      cell.classList.add('cal-day-selected');
+
+      const iso = cell.dataset.dateIso;
+      const status = cell.dataset.status;
+      const rec = historyByDate[iso];
+
+      const parts = iso.split('-');
+      const formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+
+      if (rec && (rec.status === 'done' || rec.doneCount > 0)) {
+        selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> Treino concluído com sucesso! (${rec.title || 'Treino do dia'} — ${rec.doneCount || '✓'}/${rec.totalCount || '✓'} concluídos).`;
+      } else if (rec && rec.status === 'missed') {
+        selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> Dia marcado como não treinado / descanso.`;
+      } else if (status === 'future') {
+        selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> Dia futuro no calendário. Mantenha a disciplina para treinar neste dia!`;
+      } else if (status === 'today-pending') {
+        selectedDayTextEl.innerHTML = `<strong>Hoje (${formattedDate}):</strong> Treino de hoje pronto para você realizar! Marque seus exercícios para ficar verde.`;
+      } else {
+        selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> Dia sem registro de treino concluído.`;
+      }
+    });
+  });
+}
+
 function renderHistories() {
-  const weightListEl = document.getElementById('weightHistoryList');
-  const weightSummaryEl = document.getElementById('weightProgressionSummary');
-  const workoutListEl = document.getElementById('workoutHistoryList');
-
-  // Resumo da evolução de peso
-  if (appState.weightHistory.length >= 2) {
-    const latest = parseFloat(appState.weightHistory[0].weight);
-    const oldest = parseFloat(appState.weightHistory[appState.weightHistory.length - 1].weight);
-    const diff = (latest - oldest).toFixed(1);
-    const sign = diff > 0 ? `+${diff}` : `${diff}`;
-    weightSummaryEl.innerHTML = `Variação total desde o início: <strong class="text-red">${sign} kg</strong> (Inicial: ${oldest} kg → Atual: ${latest} kg)`;
-  } else {
-    weightSummaryEl.textContent = 'Atualize seu peso sempre que se pesar para visualizar sua curva de evolução.';
-  }
-
-  // Lista de Peso
-  if (appState.weightHistory.length === 0) {
-    weightListEl.innerHTML = `<div class="history-item"><span class="history-item-sub">Nenhum registro de peso ainda.</span></div>`;
-  } else {
-    weightListEl.innerHTML = appState.weightHistory.map((item, idx) => `
-      <div class="history-item">
-        <div>
-          <div class="history-item-title">${item.weight} kg ${idx === 0 ? '(Atual)' : ''}</div>
-          <div class="history-item-sub">Registrado em ${item.date}</div>
-        </div>
-        <span class="history-badge">IMC ${item.imc}</span>
-      </div>
-    `).join('');
-  }
-
-  // Lista de Treinos Concluídos
-  if (appState.workoutHistory.length === 0) {
-    workoutListEl.innerHTML = `<div class="history-item"><span class="history-item-sub">Nenhum treino finalizado ainda. Marque seus exercícios como "FEITO" e clique em "Registrar Treino Concluído"!</span></div>`;
-  } else {
-    workoutListEl.innerHTML = appState.workoutHistory.map(w => `
-      <div class="history-item">
-        <div>
-          <div class="history-item-title">${w.title}</div>
-          <div class="history-item-sub">${w.locationLabel} • ${w.date}</div>
-        </div>
-        <span class="history-badge">${w.doneCount}/${w.totalCount} FEITOS</span>
-      </div>
-    `).join('');
-  }
+  renderMonthlyCalendar();
 }
 
 // ============================================================================
@@ -3607,31 +3804,69 @@ document.addEventListener('DOMContentLoaded', () => {
     weightModal.classList.add('hidden');
   }
 
-  document.getElementById('btnLogWeight').addEventListener('click', openWeightModal);
-  document.getElementById('btnAddWeightEntry').addEventListener('click', openWeightModal);
-  document.getElementById('btnCloseWeightModal').addEventListener('click', closeWeightModal);
-  document.getElementById('btnCancelWeightModal').addEventListener('click', closeWeightModal);
+  const btnLogWeight = document.getElementById('btnLogWeight');
+  if (btnLogWeight) btnLogWeight.addEventListener('click', openWeightModal);
 
-  document.getElementById('weightUpdateForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const w = parseFloat(newWeightInput.value);
-    if (!w || w < 25) return;
+  const btnAddWeightEntry = document.getElementById('btnAddWeightEntry');
+  if (btnAddWeightEntry) btnAddWeightEntry.addEventListener('click', openWeightModal);
 
-    appState.profile.weight = w.toFixed(1);
-    recordWeightIfChanged(w);
-    saveState();
-    closeWeightModal();
-    renderDashboard();
-    showToast(`⚖️ Peso atualizado para ${w.toFixed(1)} kg!`);
-  });
+  const btnCloseWeightModal = document.getElementById('btnCloseWeightModal');
+  if (btnCloseWeightModal) btnCloseWeightModal.addEventListener('click', closeWeightModal);
+
+  const btnCancelWeightModal = document.getElementById('btnCancelWeightModal');
+  if (btnCancelWeightModal) btnCancelWeightModal.addEventListener('click', closeWeightModal);
+
+  const weightUpdateForm = document.getElementById('weightUpdateForm');
+  if (weightUpdateForm) {
+    weightUpdateForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const w = parseFloat(newWeightInput.value);
+      if (!w || w < 25) return;
+
+      appState.profile.weight = w.toFixed(1);
+      recordWeightIfChanged(w);
+      saveState();
+      closeWeightModal();
+      renderDashboard();
+      showToast(`⚖️ Peso atualizado para ${w.toFixed(1)} kg!`);
+    });
+  }
 
   // Limpar histórico de treinos
-  document.getElementById('btnClearHistory').addEventListener('click', () => {
-    appState.workoutHistory = [];
-    saveState();
-    renderDashboard();
-    showToast('Histórico de treinos limpo.');
-  });
+  const btnClearHistory = document.getElementById('btnClearHistory');
+  if (btnClearHistory) {
+    btnClearHistory.addEventListener('click', () => {
+      appState.workoutHistory = [];
+      saveState();
+      renderDashboard();
+      showToast('Histórico de treinos limpo.');
+    });
+  }
+
+  // Navegação do Calendário Mensal
+  const btnCalPrev = document.getElementById('btnCalPrevMonth');
+  if (btnCalPrev) {
+    btnCalPrev.addEventListener('click', () => {
+      calendarViewingDate.setMonth(calendarViewingDate.getMonth() - 1);
+      renderMonthlyCalendar();
+    });
+  }
+
+  const btnCalNext = document.getElementById('btnCalNextMonth');
+  if (btnCalNext) {
+    btnCalNext.addEventListener('click', () => {
+      calendarViewingDate.setMonth(calendarViewingDate.getMonth() + 1);
+      renderMonthlyCalendar();
+    });
+  }
+
+  const btnCalToday = document.getElementById('btnCalCurrentMonth');
+  if (btnCalToday) {
+    btnCalToday.addEventListener('click', () => {
+      calendarViewingDate = new Date();
+      renderMonthlyCalendar();
+    });
+  }
 
   // Controles do Timer de Descanso
   document.getElementById('btnTimerAdd15').addEventListener('click', () => {

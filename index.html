@@ -717,41 +717,46 @@
         <!-- Cards de exercícios injetados via JS -->
       </div>
 
-      <!-- Seção de Progressão Geral & Histórico de Evolução -->
-      <div class="progression-section">
-        <div class="progression-grid">
-          <!-- Evolução de Peso e Meta -->
-          <div class="prog-card">
-            <div class="prog-card-header">
-              <div>
-                <span class="stat-eyebrow">ACOMPANHAMENTO CORPORAL</span>
-                <h3>Evolução de Peso & IMC</h3>
+      <!-- CALENDÁRIO MENSAL DE FREQUÊNCIA E DISCIPLINA -->
+      <div class="monthly-calendar-section">
+        <div class="stat-card monthly-calendar-card">
+          <div class="monthly-calendar-header">
+            <div>
+              <span class="stat-eyebrow">CALENDÁRIO DO MÊS • FREQUÊNCIA & DISCIPLINA</span>
+              <div class="cal-title-row">
+                <h3 class="cal-month-title" id="calMonthTitle">Novembro 2026</h3>
+                <span class="cal-stats-badge" id="calMonthStatsBadge">0 treinos no mês</span>
               </div>
-              <button type="button" class="btn-outline-red btn-xs" id="btnAddWeightEntry">+ Novo Registro</button>
             </div>
-            <p class="prog-card-sub" id="weightProgressionSummary">
-              Registre seu peso periodicamente para acompanhar sua evolução.
-            </p>
-            <div class="weight-history-list" id="weightHistoryList">
-              <!-- Histórico de peso -->
+
+            <div class="cal-header-controls">
+              <div class="cal-legend">
+                <span class="cal-legend-item"><i class="cal-dot cal-dot-done"></i> Fez no dia</span>
+                <span class="cal-legend-item"><i class="cal-dot cal-dot-missed"></i> Não fez</span>
+                <span class="cal-legend-item"><i class="cal-dot cal-dot-today"></i> Hoje</span>
+              </div>
+              <div class="cal-nav-btns">
+                <button type="button" class="btn-cal-nav" id="btnCalPrevMonth" title="Mês anterior">‹</button>
+                <button type="button" class="btn-cal-nav btn-cal-today" id="btnCalCurrentMonth" title="Ir para o mês atual">Hoje</button>
+                <button type="button" class="btn-cal-nav" id="btnCalNextMonth" title="Próximo mês">›</button>
+              </div>
             </div>
           </div>
 
-          <!-- Histórico de Treinos Finalizados -->
-          <div class="prog-card">
-            <div class="prog-card-header">
-              <div>
-                <span class="stat-eyebrow">CONSISTÊNCIA E DISCIPLINA</span>
-                <h3>Histórico de Treinos Concluídos</h3>
-              </div>
-              <button type="button" class="btn-text-muted btn-xs" id="btnClearHistory">Limpar histórico</button>
+          <!-- Grade dos Dias do Mês -->
+          <div class="calendar-grid-container">
+            <div class="cal-weekdays-header">
+              <span>SEG</span><span>TER</span><span>QUA</span><span>QUI</span><span>SEX</span><span>SÁB</span><span>DOM</span>
             </div>
-            <p class="prog-card-sub">
-              Cada treino finalizado fica salvo abaixo para você acompanhar sua constância.
-            </p>
-            <div class="workout-history-list" id="workoutHistoryList">
-              <!-- Histórico de treinos -->
+            <div class="cal-days-grid" id="calDaysGrid">
+              <!-- Células geradas dinamicamente com os números dos dias (1 a 30/31) -->
             </div>
+          </div>
+
+          <!-- Banner Informativo do dia clicado no calendário -->
+          <div class="cal-selected-day-banner" id="calSelectedDayBanner">
+            <span class="cal-info-icon">📅</span>
+            <span id="calSelectedDayText">Clique em qualquer dia do mês acima para ver o status detalhado.</span>
           </div>
         </div>
       </div>
