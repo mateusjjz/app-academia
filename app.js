@@ -3386,7 +3386,7 @@ function renderMonthlyCalendar() {
 
   // Sincroniza também os dias da semana corrente (Segunda a Domingo)
   const plan = getActivePlan();
-  WEEKDAYS_SCHEMA.forEach(day => {
+  WEEK_DAYS.forEach(day => {
     const dayDate = getWeekDayDate(day.order, today);
     const dayIso = formatDateIso(dayDate);
     const summary = getDayStatusSummary(day.key, plan);
@@ -3414,24 +3414,30 @@ function renderMonthlyCalendar() {
     }
   });
 
-  // Primeiro dia do mês e total de dias no mês
+  // Primeiro dia do mês (0 = Domingo, 1 = Segunda, ..., 6 = Sábado)
   const firstDayObj = new Date(currentYear, currentMonth, 1);
-  // No Brasil consideramos a semana começando na Segunda (0) até Domingo (6)
-  const firstDayWeekIndex = (firstDayObj.getDay() + 6) % 7; 
+  const firstDayWeekIndex = firstDayObj.getDay(); // 0 a 6
   const totalDaysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
 
   let doneCountThisMonth = 0;
   let missedCountThisMonth = 0;
 
   let gridHtml = '';
 
-  // Células em branco antes do dia 1
-  for (let i = 0; i < firstDayWeekIndex; i++) {
-    gridHtml += `<div class="cal-day-cell cal-day-empty"></div>`;
+  // 1. Dias do mês anterior para preencher a primeira semana (estilo Windows)
+  for (let i = firstDayWeekIndex - 1; i >= 0; i--) {
+    const prevDayNum = daysInPrevMonth - i;
+    gridHtml += `
+      <div class="cal-day-cell cal-day-adjacent">
+        <span class="cal-day-number">${prevDayNum}</span>
+      </div>
+    `;
   }
 
   const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
 
+  // 2. Dias do mês atual (cada um em seu quadradinho colorido)
   for (let dayNum = 1; dayNum <= totalDaysInMonth; dayNum++) {
     const dayDate = new Date(currentYear, currentMonth, dayNum);
     const dayIso = formatDateIso(dayDate);
@@ -3444,38 +3450,62 @@ function renderMonthlyCalendar() {
     const record = historyByDate[dayIso];
     let cellStatus = 'empty';
     let cellClass = '';
+    let statusPill = '';
 
     if (record) {
       if (record.status === 'done' || record.doneCount > 0) {
         cellStatus = 'done';
         cellClass = 'cal-day-done';
+        statusPill = '<span class="cal-day-status-pill">✓</span>';
         doneCountThisMonth++;
       } else {
         cellStatus = 'missed';
         cellClass = 'cal-day-missed';
+        statusPill = '<span class="cal-day-status-pill">✕</span>';
         missedCountThisMonth++;
       }
     } else if (isFuture) {
       cellStatus = 'future';
       cellClass = 'cal-day-future';
+      statusPill = '<span class="cal-day-status-pill"></span>';
     } else if (isToday) {
       cellStatus = 'today-pending';
       cellClass = 'cal-day-today-pending';
+      statusPill = '<span class="cal-day-status-pill">HOJE</span>';
     } else if (isPast) {
       // Dia passado sem registro de treino
       cellStatus = 'missed';
       cellClass = 'cal-day-missed';
+      statusPill = '<span class="cal-day-status-pill">✕</span>';
       missedCountThisMonth++;
     }
 
     if (isToday) {
       cellClass += ' cal-day-is-today';
+      if (cellStatus === 'done') {
+        statusPill = '<span class="cal-day-status-pill">✓ HOJE</span>';
+      }
     }
 
     gridHtml += `
       <div class="cal-day-cell ${cellClass}" data-date-iso="${dayIso}" data-day="${dayNum}" data-status="${cellStatus}" title="${dayNum}/${currentMonth + 1}/${currentYear}">
-        <span>${dayNum}</span>
-        <span class="cal-day-indicator"></span>
+        <span class="cal-day-number">${dayNum}</span>
+        ${statusPill}
+      </div>
+    `;
+  }
+
+  // 3. Dias do próximo mês para completar a grade em semanas fechadas (como no Windows)
+  const totalCellsRendered = firstDayWeekIndex + totalDaysInMonth;
+  const remainingInRow = (7 - (totalCellsRendered % 7)) % 7;
+  let targetTotal = totalCellsRendered + remainingInRow;
+  if (targetTotal < 35) targetTotal = 35;
+  const totalNextDays = targetTotal - totalCellsRendered;
+
+  for (let nextDay = 1; nextDay <= totalNextDays; nextDay++) {
+    gridHtml += `
+      <div class="cal-day-cell cal-day-adjacent">
+        <span class="cal-day-number">${nextDay}</span>
       </div>
     `;
   }
@@ -3492,7 +3522,7 @@ function renderMonthlyCalendar() {
   }
 
   // Interatividade de clique nos dias do calendário
-  daysGridEl.querySelectorAll('.cal-day-cell:not(.cal-day-empty)').forEach(cell => {
+  daysGridEl.querySelectorAll('.cal-day-cell:not(.cal-day-adjacent)').forEach(cell => {
     cell.addEventListener('click', () => {
       daysGridEl.querySelectorAll('.cal-day-cell').forEach(c => c.classList.remove('cal-day-selected'));
       cell.classList.add('cal-day-selected');
@@ -3505,7 +3535,7 @@ function renderMonthlyCalendar() {
       const formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
 
       if (rec && (rec.status === 'done' || rec.doneCount > 0)) {
-        selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> Treino concluído com sucesso! (${rec.title || 'Treino do dia'} — ${rec.doneCount || '✓'}/${rec.totalCount || '✓'} concluídos).`;
+        selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> Treino concluído com sucesso! (${rec.title || 'Treino do dia'} — ${rec.doneCount || '✓'}/${rec.totalCount || '✓'} feitos).`;
       } else if (rec && rec.status === 'missed') {
         selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> Dia marcado como não treinado / descanso.`;
       } else if (status === 'future') {

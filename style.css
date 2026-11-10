@@ -3170,25 +3170,27 @@ button {
 .calendar-grid-container {
   width: 100%;
   background: var(--bg-obsidian);
-  border: 1px solid var(--border-light);
+  border: 1.5px solid var(--border-light);
   border-radius: var(--radius-sm);
   padding: 16px;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 .cal-weekdays-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   text-align: center;
 }
 
 .cal-weekdays-header span {
   font-family: var(--font-display);
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
   color: var(--text-muted);
+  padding: 4px 0;
 }
 
 .cal-days-grid {
@@ -3197,7 +3199,9 @@ button {
   gap: 8px;
 }
 
+/* Quadrados dos dias (Estilo Calendário Aberto / Windows no tema REDLINE) */
 .cal-day-cell {
+  aspect-ratio: 1 / 1;
   min-height: 52px;
   border-radius: 10px;
   display: flex;
@@ -3205,87 +3209,134 @@ button {
   align-items: center;
   justify-content: center;
   position: relative;
-  font-family: var(--font-display);
-  font-size: 1.05rem;
-  font-weight: 700;
   cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
   user-select: none;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-.cal-day-cell:hover:not(.cal-day-empty) {
+.cal-day-cell:hover:not(.cal-day-adjacent) {
   transform: translateY(-2px);
+  filter: brightness(1.15);
 }
 
-.cal-day-indicator {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  margin-top: 3px;
+.cal-day-number {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text-primary);
 }
 
-/* Verde: Fez no dia */
+.cal-day-status-pill {
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-top: 4px;
+}
+
+/* Verde: Quadrado do dia Feito / Concluído */
 .cal-day-done {
-  background: rgba(16, 185, 129, 0.12);
-  border: 1.5px solid var(--done-border);
-  color: var(--done-green);
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.35), rgba(6, 78, 59, 0.6)) !important;
+  border: 1.5px solid #10b981 !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.28) !important;
 }
 
-.cal-day-done .cal-day-indicator {
-  background: var(--done-green);
-  box-shadow: 0 0 6px var(--done-green);
+.cal-day-done .cal-day-number {
+  color: #ffffff;
 }
 
-/* Vermelho: Não fez */
+.cal-day-done .cal-day-status-pill {
+  color: #34d399;
+}
+
+/* Vermelho: Quadrado do dia Não Feito / Faltou */
 .cal-day-missed {
-  background: rgba(255, 30, 56, 0.1);
-  border: 1.5px solid var(--red-border);
+  background: linear-gradient(145deg, rgba(255, 30, 56, 0.32), rgba(127, 29, 29, 0.55)) !important;
+  border: 1.5px solid #ff1e38 !important;
+  box-shadow: 0 0 12px rgba(255, 30, 56, 0.28) !important;
+}
+
+.cal-day-missed .cal-day-number {
+  color: #ffffff;
+}
+
+.cal-day-missed .cal-day-status-pill {
   color: #ff6b7d;
 }
 
-.cal-day-missed .cal-day-indicator {
-  background: var(--red-primary);
-  box-shadow: 0 0 6px var(--red-primary);
-}
-
-/* Hoje */
+/* Hoje (Destaque do Dia Atual) */
 .cal-day-is-today {
-  border: 2px solid var(--red-primary) !important;
-  box-shadow: 0 0 14px var(--red-glow);
+  border: 2px solid #38bdf8 !important;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.6), inset 0 0 8px rgba(56, 189, 248, 0.25) !important;
 }
 
-/* Futuro */
+.cal-day-today-pending {
+  background: linear-gradient(145deg, rgba(56, 189, 248, 0.18), rgba(15, 23, 42, 0.8)) !important;
+}
+
+.cal-day-today-pending .cal-day-number {
+  color: #ffffff;
+}
+
+.cal-day-today-pending .cal-day-status-pill {
+  color: #38bdf8;
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  font-weight: 900;
+}
+
+/* Futuro: aguardando treino */
 .cal-day-future {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.cal-day-future .cal-day-indicator {
-  background: transparent;
+.cal-day-future .cal-day-number {
+  color: rgba(255, 255, 255, 0.42);
 }
 
-.cal-day-selected {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
+.cal-day-future .cal-day-status-pill {
+  color: transparent;
 }
 
-.cal-day-empty {
-  visibility: hidden;
+/* Dias de outros meses que preenchem as semanas (estilo Windows) */
+.cal-day-adjacent {
+  background: rgba(255, 255, 255, 0.008);
+  border: 1px solid rgba(255, 255, 255, 0.025);
+  cursor: default;
   pointer-events: none;
+}
+
+.cal-day-adjacent .cal-day-number {
+  color: rgba(255, 255, 255, 0.18);
+  font-weight: 500;
+}
+
+.cal-day-adjacent .cal-day-status-pill {
+  display: none;
+}
+
+/* Dia clicado/selecionado */
+.cal-day-selected {
+  outline: 2.5px solid #ffffff;
+  outline-offset: 2px;
+  transform: scale(1.04);
+  z-index: 2;
 }
 
 .cal-selected-day-banner {
   margin-top: 14px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   background: rgba(255, 30, 56, 0.08);
   border: 1px solid var(--red-border);
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.86rem;
   color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .week-day-num-tag {
@@ -3296,7 +3347,7 @@ button {
 
 @media (max-width: 640px) {
   .calendar-grid-container {
-    padding: 10px 8px;
+    padding: 10px 6px;
   }
 
   .cal-weekdays-header {
@@ -3304,7 +3355,7 @@ button {
   }
 
   .cal-weekdays-header span {
-    font-size: 0.65rem;
+    font-size: 0.68rem;
   }
 
   .cal-days-grid {
@@ -3313,8 +3364,16 @@ button {
 
   .cal-day-cell {
     min-height: 42px;
-    font-size: 0.88rem;
-    border-radius: 8px;
+    border-radius: 6px;
+  }
+
+  .cal-day-number {
+    font-size: 0.95rem;
+  }
+
+  .cal-day-status-pill {
+    font-size: 0.68rem;
+    margin-top: 2px;
   }
 
   .cal-header-controls {
