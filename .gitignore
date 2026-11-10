@@ -13,4 +13,8 @@ desktop.ini
 # Netlify
 .netlify
 
+# Firebase
+.firebase/
+firebase-debug.log
+
 

@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.redlinefit.academia",
+        "sha256_cert_fingerprints": ["9C:64:C8:21:4F:CB:BD:22:E2:DA:1E:9A:E1:BD:BB:C7:D3:23:90:E3:93:8E:FE:82:1F:02:EA:04:4E:A9:91:83"]
+      }
+    }]
