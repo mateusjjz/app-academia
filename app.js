@@ -3401,6 +3401,16 @@ function renderMonthlyCalendar() {
           totalCount: summary.total
         };
       }
+    } else if (summary.done > 0 && summary.done < summary.total) {
+      if (!historyByDate[dayIso]) {
+        historyByDate[dayIso] = {
+          dateIso: dayIso,
+          title: `${day.label} — ${summary.split.title}`,
+          status: 'partial',
+          doneCount: summary.done,
+          totalCount: summary.total
+        };
+      }
     } else if (summary.status === 'missed') {
       if (!historyByDate[dayIso]) {
         historyByDate[dayIso] = {
@@ -3421,6 +3431,7 @@ function renderMonthlyCalendar() {
   const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
 
   let doneCountThisMonth = 0;
+  let partialCountThisMonth = 0;
   let missedCountThisMonth = 0;
 
   let gridHtml = '';
@@ -3437,7 +3448,7 @@ function renderMonthlyCalendar() {
 
   const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
 
-  // 2. Dias do mês atual (cada um em seu quadradinho colorido)
+  // 2. Dias do mês atual: Verde (tudo), Laranja (parcial), Vermelho (não fez)
   for (let dayNum = 1; dayNum <= totalDaysInMonth; dayNum++) {
     const dayDate = new Date(currentYear, currentMonth, dayNum);
     const dayIso = formatDateIso(dayDate);
@@ -3453,11 +3464,19 @@ function renderMonthlyCalendar() {
     let statusPill = '';
 
     if (record) {
-      if (record.status === 'done' || record.doneCount > 0) {
+      const isDoneAll = record.status === 'done' || (record.totalCount > 0 && record.doneCount >= record.totalCount);
+      const isPartial = !isDoneAll && record.doneCount > 0 && record.doneCount < record.totalCount;
+
+      if (isDoneAll) {
         cellStatus = 'done';
         cellClass = 'cal-day-done';
         statusPill = '<span class="cal-day-status-pill">✓</span>';
         doneCountThisMonth++;
+      } else if (isPartial) {
+        cellStatus = 'partial';
+        cellClass = 'cal-day-partial';
+        statusPill = '<span class="cal-day-status-pill">⚡</span>';
+        partialCountThisMonth++;
       } else {
         cellStatus = 'missed';
         cellClass = 'cal-day-missed';
@@ -3467,7 +3486,7 @@ function renderMonthlyCalendar() {
     } else if (isFuture) {
       cellStatus = 'future';
       cellClass = 'cal-day-future';
-      statusPill = '<span class="cal-day-status-pill"></span>';
+      statusPill = '';
     } else if (isToday) {
       cellStatus = 'today-pending';
       cellClass = 'cal-day-today-pending';
@@ -3484,6 +3503,8 @@ function renderMonthlyCalendar() {
       cellClass += ' cal-day-is-today';
       if (cellStatus === 'done') {
         statusPill = '<span class="cal-day-status-pill">✓ HOJE</span>';
+      } else if (cellStatus === 'partial') {
+        statusPill = '<span class="cal-day-status-pill">⚡ HOJE</span>';
       }
     }
 
@@ -3512,13 +3533,13 @@ function renderMonthlyCalendar() {
 
   daysGridEl.innerHTML = gridHtml;
 
-  // Atualiza Badge do Mês
+  // Atualiza Badge do Mês com Feitos, Parciais e Faltas
   if (statsBadgeEl) {
-    if (doneCountThisMonth > 0 || missedCountThisMonth > 0) {
-      statsBadgeEl.textContent = `${doneCountThisMonth} feito${doneCountThisMonth === 1 ? '' : 's'} • ${missedCountThisMonth} falta${missedCountThisMonth === 1 ? '' : 's'}`;
-    } else {
-      statsBadgeEl.textContent = '0 treinos neste mês';
-    }
+    const parts = [];
+    if (doneCountThisMonth > 0) parts.push(`${doneCountThisMonth} feito${doneCountThisMonth === 1 ? '' : 's'}`);
+    if (partialCountThisMonth > 0) parts.push(`${partialCountThisMonth} parcial${partialCountThisMonth === 1 ? '' : 'is'}`);
+    if (missedCountThisMonth > 0) parts.push(`${missedCountThisMonth} falta${missedCountThisMonth === 1 ? '' : 's'}`);
+    statsBadgeEl.textContent = parts.length > 0 ? parts.join(' • ') : '0 treinos no mês';
   }
 
   // Interatividade de clique nos dias do calendário
@@ -3534,16 +3555,18 @@ function renderMonthlyCalendar() {
       const parts = iso.split('-');
       const formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
 
-      if (rec && (rec.status === 'done' || rec.doneCount > 0)) {
-        selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> Treino concluído com sucesso! (${rec.title || 'Treino do dia'} — ${rec.doneCount || '✓'}/${rec.totalCount || '✓'} feitos).`;
+      if (rec && (rec.status === 'done' || (rec.totalCount > 0 && rec.doneCount >= rec.totalCount))) {
+        selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> <span style="color:#34d399;font-weight:700">Fez tudo!</span> (${rec.title || 'Treino'} — ${rec.doneCount}/${rec.totalCount} exercícios feitos - 100%).`;
+      } else if (rec && rec.doneCount > 0 && rec.doneCount < rec.totalCount) {
+        selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> <span style="color:#fbbf24;font-weight:700">Fez parcial!</span> (${rec.title || 'Treino'} — ${rec.doneCount} de ${rec.totalCount} exercícios feitos).`;
       } else if (rec && rec.status === 'missed') {
-        selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> Dia marcado como não treinado / descanso.`;
+        selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> <span style="color:#ff6b7d;font-weight:700">Não fez</span> o treino neste dia / Descanso.`;
       } else if (status === 'future') {
-        selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> Dia futuro no calendário. Mantenha a disciplina para treinar neste dia!`;
+        selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> Dia futuro no calendário.`;
       } else if (status === 'today-pending') {
-        selectedDayTextEl.innerHTML = `<strong>Hoje (${formattedDate}):</strong> Treino de hoje pronto para você realizar! Marque seus exercícios para ficar verde.`;
+        selectedDayTextEl.innerHTML = `<strong>Hoje (${formattedDate}):</strong> Treino de hoje aguardando realização! Marque seus exercícios para ficar verde.`;
       } else {
-        selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> Dia sem registro de treino concluído.`;
+        selectedDayTextEl.innerHTML = `<strong>${formattedDate}:</strong> <span style="color:#ff6b7d;font-weight:700">Não fez</span> treino registrado neste dia.`;
       }
     });
   });
@@ -3870,6 +3893,38 @@ document.addEventListener('DOMContentLoaded', () => {
       saveState();
       renderDashboard();
       showToast('Histórico de treinos limpo.');
+    });
+  }
+
+  // Modal do Calendário Completo (Abre ao Clicar)
+  const calendarModal = document.getElementById('calendarModal');
+
+  function openCalendarModal() {
+    if (!calendarModal) return;
+    calendarModal.classList.remove('hidden');
+    renderMonthlyCalendar();
+  }
+
+  function closeCalendarModal() {
+    if (!calendarModal) return;
+    calendarModal.classList.add('hidden');
+  }
+
+  const btnOpenCal1 = document.getElementById('btnOpenCalendarModal');
+  if (btnOpenCal1) btnOpenCal1.addEventListener('click', openCalendarModal);
+
+  const btnOpenCal2 = document.getElementById('btnQuickOpenCalendar');
+  if (btnOpenCal2) btnOpenCal2.addEventListener('click', openCalendarModal);
+
+  const btnCloseCal = document.getElementById('btnCloseCalendarModal');
+  if (btnCloseCal) btnCloseCal.addEventListener('click', closeCalendarModal);
+
+  const btnFooterCloseCal = document.getElementById('btnFooterCloseCalendar');
+  if (btnFooterCloseCal) btnFooterCloseCal.addEventListener('click', closeCalendarModal);
+
+  if (calendarModal) {
+    calendarModal.addEventListener('click', (e) => {
+      if (e.target.id === 'calendarModal') closeCalendarModal();
     });
   }
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'redline-fit-pwa-v3';
+const CACHE_NAME = 'redline-fit-pwa-v5';
 const CORE_ASSETS = [
   '/',
   '/index.html',

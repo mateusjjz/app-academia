@@ -3123,6 +3123,11 @@ button {
   box-shadow: 0 0 8px var(--done-green);
 }
 
+.cal-dot-partial {
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
 .cal-dot-missed {
   background: var(--red-primary);
   box-shadow: 0 0 8px var(--red-primary);
@@ -3236,7 +3241,7 @@ button {
   margin-top: 4px;
 }
 
-/* Verde: Quadrado do dia Feito / Concluído */
+/* Verde: Quadrado do dia Feito Tudo (100%) */
 .cal-day-done {
   background: linear-gradient(145deg, rgba(16, 185, 129, 0.35), rgba(6, 78, 59, 0.6)) !important;
   border: 1.5px solid #10b981 !important;
@@ -3244,11 +3249,26 @@ button {
 }
 
 .cal-day-done .cal-day-number {
-  color: #ffffff;
+  color: #ffffff !important;
 }
 
 .cal-day-done .cal-day-status-pill {
-  color: #34d399;
+  color: #34d399 !important;
+}
+
+/* Laranja: Quadrado do dia Feito Parcial (alguns exercícios feitos) */
+.cal-day-partial {
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.35), rgba(180, 83, 9, 0.6)) !important;
+  border: 1.5px solid #f59e0b !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.28) !important;
+}
+
+.cal-day-partial .cal-day-number {
+  color: #ffffff !important;
+}
+
+.cal-day-partial .cal-day-status-pill {
+  color: #fbbf24 !important;
 }
 
 /* Vermelho: Quadrado do dia Não Feito / Faltou */
@@ -3259,11 +3279,11 @@ button {
 }
 
 .cal-day-missed .cal-day-number {
-  color: #ffffff;
+  color: #ffffff !important;
 }
 
 .cal-day-missed .cal-day-status-pill {
-  color: #ff6b7d;
+  color: #ff6b7d !important;
 }
 
 /* Hoje (Destaque do Dia Atual) */
@@ -3343,6 +3363,40 @@ button {
   font-size: 0.72rem;
   color: var(--red-bright);
   margin-left: 4px;
+}
+
+.calendar-modal-box {
+  max-width: 560px;
+  width: 95%;
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 24px 20px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 30, 56, 0.15);
+}
+
+.cal-modal-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.quick-toggle-btn-red {
+  background: rgba(255, 30, 56, 0.12) !important;
+  border-color: rgba(255, 30, 56, 0.35) !important;
+  color: #ff4d63 !important;
+}
+
+.quick-toggle-btn-red:hover {
+  background: rgba(255, 30, 56, 0.22) !important;
+  border-color: var(--red-primary) !important;
+  color: #ffffff !important;
 }
 
 @media (max-width: 640px) {
