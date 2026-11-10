@@ -1,0 +1,133 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// This security rules file assumes the following data structures:
+//
+// Collection: user_profiles
+// Document ID: {userKey} (strictly 'simone' or 'mateus')
+// Fields:
+//   - userKey: string (required, immutable, must match document ID: 'simone' | 'mateus')
+//   - updatedAt: int (required, positive epoch timestamp in ms)
+//   - hasConfiguredProfile: bool (required, whether initial setup is completed)
+//   - profile: map (required, max 10 keys: name, gender, weight, height, location, goal)
+//   - activeDayKey: string (required, max 10 chars: 'seg'..'dom')
+//   - daySplitMap: map (required, max 10 keys, maps weekday key to split ID)
+//   - dayStatusOverride: map (required, max 10 keys, manual day status overrides)
+//   - activeSplitId: string (required, max 10 chars: 'A' | 'B' | 'C' | 'D')
+//   - activeFilter: string (required, max 20 chars: 'all' | 'pending' | 'done')
+//   - exerciseProgress: map (required, max 300 keys, tracks sets and completion per day/exercise)
+//   - weightHistory: list (required, max 100 items, weight progression records)
+//   - workoutHistory: list (required, max 100 items, completed workout logs)
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    // Check if the document ID is one of the two authorized user keys
+    function isAllowedUserKey(userKey) {
+      return userKey in ['simone', 'mateus'];
+    }
+
+    // Validate required fields exist
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // Validate that the document contains only the allowed fields
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Validate string type and length bounds
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+
+    // Validate that a list is a list and enforces size limits
+    function isValidList(listData, maxSize) {
+      return listData is list && listData.size() <= maxSize;
+    }
+
+    // Validate that a map is a map and enforces key count limits
+    function isValidBoundedMap(mapData, maxKeys) {
+      return mapData is map && mapData.size() <= maxKeys;
+    }
+
+    // ===============================================================
+    // Domain Validators (Used in BOTH create and update)
+    // ===============================================================
+
+    function isValidUserProfile(data, userKey) {
+      let allowedFields = [
+        'userKey',
+        'updatedAt',
+        'hasConfiguredProfile',
+        'profile',
+        'activeDayKey',
+        'daySplitMap',
+        'dayStatusOverride',
+        'activeSplitId',
+        'activeFilter',
+        'exerciseProgress',
+        'weightHistory',
+        'workoutHistory'
+      ];
+
+      return isAllowedUserKey(userKey) &&
+        hasOnlyAllowedFields(allowedFields) &&
+        hasRequiredFields(allowedFields) &&
+        data.userKey is string &&
+        data.userKey == userKey &&
+        data.updatedAt is int &&
+        data.updatedAt > 0 &&
+        data.hasConfiguredProfile is bool &&
+        isValidBoundedMap(data.profile, 10) &&
+        validStringLength('activeDayKey', 1, 10) &&
+        isValidBoundedMap(data.daySplitMap, 10) &&
+        isValidBoundedMap(data.dayStatusOverride, 10) &&
+        validStringLength('activeSplitId', 1, 10) &&
+        validStringLength('activeFilter', 1, 20) &&
+        isValidBoundedMap(data.exerciseProgress, 300) &&
+        isValidList(data.weightHistory, 100) &&
+        isValidList(data.workoutHistory, 100);
+    }
+
+    // ===============================================================
+    // Collection Rules: /user_profiles/{userKey}
+    // ===============================================================
+
+    match /user_profiles/{userKey} {
+      // Allow direct document reads only for 'simone' and 'mateus'
+      allow get: if isAllowedUserKey(userKey);
+
+      // Disallow collection-wide list queries
+      allow list: if false;
+
+      // Allow create and update with strict schema, type, and size validation
+      allow create: if isValidUserProfile(request.resource.data, userKey);
+      allow update: if isValidUserProfile(request.resource.data, userKey) &&
+        request.resource.data.userKey == resource.data.userKey;
+
+      // Disallow deleting user profile documents
+      allow delete: if false;
+    }
+
+    // ===============================================================
+    // Default Deny for all other collections and paths
+    // ===============================================================
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

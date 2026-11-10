@@ -72,8 +72,8 @@
       </div>
 
       <div class="header-actions">
-        <div class="active-user-pill" id="activeUserPill" title="Usuário conectado">
-          <span class="user-dot"></span>
+        <div class="active-user-pill" id="activeUserPill" title="Usuário conectado • Sincronizado em tempo real na nuvem Firebase">
+          <span class="user-dot" id="cloudSyncDot"></span>
           <span id="headerActiveUserName">Atleta</span>
         </div>
 
@@ -844,5 +844,29 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script src="app.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      projectId: "redline-fit-academia-d3d36",
+      appId: "1:273298640727:web:66686a1feec4be999b7812",
+      storageBucket: "redline-fit-academia-d3d36.firebasestorage.app",
+      apiKey: "AIzaSyDjO7ksqR44NLNnc-L2N8CDPJM1k_hzKuk",
+      authDomain: "redline-fit-academia-d3d36.firebaseapp.com",
+      messagingSenderId: "273298640727",
+      measurementId: "G-4N3PFHWXPG"
+    };
+
+    try {
+      const fbApp = initializeApp(firebaseConfig);
+      const db = getFirestore(fbApp);
+      if (typeof window.initRedlineFirebaseSync === "function") {
+        window.initRedlineFirebaseSync({ db, doc, getDoc, setDoc, onSnapshot });
+      }
+    } catch (err) {
+      console.error("Erro ao inicializar Firebase Cloud Sync:", err);
+    }
+  </script>
 </body>
 </html>

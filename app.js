@@ -2010,6 +2010,7 @@ function getUserStorageKey(userKey = currentLoggedUserKey) {
 function createDefaultStateForUser(userKey) {
   const userCfg = USERS_CREDENTIALS[userKey] || { displayName: '', defaultGender: 'male' };
   return {
+    updatedAt: 0,
     hasConfiguredProfile: false,
     profile: {
       name: userCfg.displayName,
@@ -2040,6 +2041,171 @@ let restTimerInterval = null;
 let restSecondsRemaining = 0;
 
 // ============================================================================
+// SINCRONIZAÇÃO EM TEMPO REAL NA NUVEM (GOOGLE FIREBASE FIRESTORE)
+// ============================================================================
+
+const MAX_HISTORY_ENTRIES = 100;
+
+const firebaseCloud = {
+  db: null,
+  doc: null,
+  getDoc: null,
+  setDoc: null,
+  onSnapshot: null,
+  unsubscribe: null,
+  isApplyingRemoteUpdate: false
+};
+
+function sanitizeHistoryCap(stateObj) {
+  if (!stateObj) return;
+  if (Array.isArray(stateObj.weightHistory) && stateObj.weightHistory.length > MAX_HISTORY_ENTRIES) {
+    stateObj.weightHistory = stateObj.weightHistory.slice(0, MAX_HISTORY_ENTRIES);
+  }
+  if (Array.isArray(stateObj.workoutHistory) && stateObj.workoutHistory.length > MAX_HISTORY_ENTRIES) {
+    stateObj.workoutHistory = stateObj.workoutHistory.slice(0, MAX_HISTORY_ENTRIES);
+  }
+}
+
+function buildCloudPayload(userKey, state) {
+  sanitizeHistoryCap(state);
+  return {
+    userKey: String(userKey),
+    updatedAt: Math.max(1, Math.floor(Number(state.updatedAt) || Date.now())),
+    hasConfiguredProfile: Boolean(state.hasConfiguredProfile),
+    profile: {
+      name: String((state.profile && state.profile.name) || ''),
+      gender: (state.profile && state.profile.gender === 'female') ? 'female' : 'male',
+      weight: String((state.profile && state.profile.weight) || ''),
+      height: (state.profile && state.profile.height !== undefined && state.profile.height !== null) ? String(state.profile.height) : '',
+      location: (state.profile && state.profile.location === 'gym') ? 'gym' : 'home',
+      goal: String((state.profile && state.profile.goal) || 'hypertrophy')
+    },
+    activeDayKey: String(state.activeDayKey || getCurrentSystemWeekdayKey()),
+    daySplitMap: { ...getDefaultDaySplitMap(), ...(state.daySplitMap || {}) },
+    dayStatusOverride: { ...(state.dayStatusOverride || {}) },
+    activeSplitId: String(state.activeSplitId || 'A'),
+    activeFilter: String(state.activeFilter || 'all'),
+    exerciseProgress: { ...(state.exerciseProgress || {}) },
+    weightHistory: Array.isArray(state.weightHistory) ? state.weightHistory.slice(0, MAX_HISTORY_ENTRIES) : [],
+    workoutHistory: Array.isArray(state.workoutHistory) ? state.workoutHistory.slice(0, MAX_HISTORY_ENTRIES) : []
+  };
+}
+
+async function pushStateToCloud(userKey = currentLoggedUserKey, state = appState) {
+  if (!userKey || !USERS_CREDENTIALS[userKey] || !firebaseCloud.db || !firebaseCloud.setDoc || !firebaseCloud.doc) {
+    return;
+  }
+  try {
+    const payload = buildCloudPayload(userKey, state);
+    const ref = firebaseCloud.doc(firebaseCloud.db, 'user_profiles', userKey);
+    await firebaseCloud.setDoc(ref, payload);
+  } catch (err) {
+    console.warn('Aviso ao sincronizar com Firebase Cloud:', err);
+  }
+}
+
+function applyCloudSnapshotToLocalState(userKey, cloudData) {
+  if (!cloudData || userKey !== currentLoggedUserKey) return;
+  const baseState = createDefaultStateForUser(userKey);
+
+  firebaseCloud.isApplyingRemoteUpdate = true;
+  try {
+    appState = {
+      ...baseState,
+      ...cloudData,
+      updatedAt: Number(cloudData.updatedAt) || Date.now(),
+      hasConfiguredProfile: Boolean(cloudData.hasConfiguredProfile),
+      profile: {
+        ...baseState.profile,
+        ...(cloudData.profile || {}),
+        name: (cloudData.profile && cloudData.profile.name) || baseState.profile.name
+      },
+      activeDayKey: cloudData.activeDayKey || getCurrentSystemWeekdayKey(),
+      daySplitMap: { ...getDefaultDaySplitMap(), ...(cloudData.daySplitMap || {}) },
+      dayStatusOverride: cloudData.dayStatusOverride || {},
+      exerciseProgress: cloudData.exerciseProgress || {},
+      weightHistory: Array.isArray(cloudData.weightHistory) ? cloudData.weightHistory.slice(0, MAX_HISTORY_ENTRIES) : [],
+      workoutHistory: Array.isArray(cloudData.workoutHistory) ? cloudData.workoutHistory.slice(0, MAX_HISTORY_ENTRIES) : []
+    };
+    appState.activeSplitId = appState.daySplitMap[appState.activeDayKey] || 'A';
+
+    // Salva localmente sem reenviar para a nuvem
+    saveState(true);
+    populateSetupFormFromState();
+
+    const setupSec = document.getElementById('setupSection');
+    if (setupSec) {
+      if (appState.hasConfiguredProfile) {
+        setupSec.classList.add('hidden');
+      } else {
+        setupSec.classList.remove('hidden');
+      }
+    }
+    renderDashboard();
+  } finally {
+    firebaseCloud.isApplyingRemoteUpdate = false;
+  }
+}
+
+function startCloudListenerForUser(userKey) {
+  if (typeof firebaseCloud.unsubscribe === 'function') {
+    firebaseCloud.unsubscribe();
+    firebaseCloud.unsubscribe = null;
+  }
+
+  if (!userKey || !USERS_CREDENTIALS[userKey] || !firebaseCloud.db || !firebaseCloud.onSnapshot || !firebaseCloud.doc) {
+    return;
+  }
+
+  const ref = firebaseCloud.doc(firebaseCloud.db, 'user_profiles', userKey);
+  firebaseCloud.unsubscribe = firebaseCloud.onSnapshot(
+    ref,
+    (snapshot) => {
+      if (userKey !== currentLoggedUserKey) return;
+
+      if (!snapshot.exists()) {
+        // Primeiro acesso deste perfil na nuvem: cria o documento inicial no Firestore
+        appState.updatedAt = Math.max(1, Number(appState.updatedAt) || Date.now());
+        pushStateToCloud(userKey, appState);
+        return;
+      }
+
+      const cloudData = snapshot.data();
+      const cloudTime = Number(cloudData.updatedAt) || 0;
+      const localTime = Number(appState.updatedAt) || 0;
+
+      // Se a nuvem tem perfil configurado e o aparelho local ainda não tem, ou se a nuvem é mais recente:
+      if (
+        (cloudData.hasConfiguredProfile && !appState.hasConfiguredProfile) ||
+        cloudTime > localTime
+      ) {
+        applyCloudSnapshotToLocalState(userKey, cloudData);
+      } else if (
+        (appState.hasConfiguredProfile && !cloudData.hasConfiguredProfile) ||
+        localTime > cloudTime
+      ) {
+        pushStateToCloud(userKey, appState);
+      }
+    },
+    (err) => {
+      console.warn('Listener do Firebase Firestore desconectado temporariamente:', err);
+    }
+  );
+}
+
+window.initRedlineFirebaseSync = function initRedlineFirebaseSync(sdk) {
+  firebaseCloud.db = sdk.db;
+  firebaseCloud.doc = sdk.doc;
+  firebaseCloud.getDoc = sdk.getDoc;
+  firebaseCloud.setDoc = sdk.setDoc;
+  firebaseCloud.onSnapshot = sdk.onSnapshot;
+
+  if (currentLoggedUserKey) {
+    startCloudListenerForUser(currentLoggedUserKey);
+  }
+};
+
+// ============================================================================
 // INICIALIZAÇÃO, LOGIN POR USUÁRIO E PERSISTÊNCIA INDIVIDUAL
 // ============================================================================
 
@@ -2057,6 +2223,7 @@ function loadState(userKey = currentLoggedUserKey) {
       appState = {
         ...baseState,
         ...parsed,
+        updatedAt: Number(parsed.updatedAt) || 0,
         profile: {
           ...baseState.profile,
           ...(parsed.profile || {}),
@@ -2066,8 +2233,8 @@ function loadState(userKey = currentLoggedUserKey) {
         daySplitMap: { ...getDefaultDaySplitMap(), ...(parsed.daySplitMap || {}) },
         dayStatusOverride: parsed.dayStatusOverride || {},
         exerciseProgress: parsed.exerciseProgress || {},
-        weightHistory: Array.isArray(parsed.weightHistory) ? parsed.weightHistory : [],
-        workoutHistory: Array.isArray(parsed.workoutHistory) ? parsed.workoutHistory : []
+        weightHistory: Array.isArray(parsed.weightHistory) ? parsed.weightHistory.slice(0, MAX_HISTORY_ENTRIES) : [],
+        workoutHistory: Array.isArray(parsed.workoutHistory) ? parsed.workoutHistory.slice(0, MAX_HISTORY_ENTRIES) : []
       };
       appState.activeSplitId = appState.daySplitMap[appState.activeDayKey] || 'A';
     } else {
@@ -2079,10 +2246,17 @@ function loadState(userKey = currentLoggedUserKey) {
   }
 }
 
-function saveState() {
+function saveState(skipCloud = false) {
   if (!currentLoggedUserKey) return;
   try {
+    sanitizeHistoryCap(appState);
+    if (!skipCloud) {
+      appState.updatedAt = Date.now();
+    }
     localStorage.setItem(getUserStorageKey(currentLoggedUserKey), JSON.stringify(appState));
+    if (!skipCloud && !firebaseCloud.isApplyingRemoteUpdate) {
+      pushStateToCloud(currentLoggedUserKey, appState);
+    }
   } catch (err) {
     console.error('Erro ao salvar estado do usuário:', err);
   }
@@ -2112,14 +2286,19 @@ function applyLoggedUserSession(userKey, showWelcomeToast = false) {
   }
 
   renderDashboard();
+  startCloudListenerForUser(userKey);
 
   if (showWelcomeToast) {
-    showToast(`👋 Bem-vindo(a), ${userCfg.displayName}! Seus dados e treinos foram carregados.`);
+    showToast(`☁️ Bem-vindo(a), ${userCfg.displayName}! Sincronização na nuvem ativada.`);
   }
 }
 
 function logoutCurrentUser() {
   stopRestTimer();
+  if (typeof firebaseCloud.unsubscribe === 'function') {
+    firebaseCloud.unsubscribe();
+    firebaseCloud.unsubscribe = null;
+  }
   currentLoggedUserKey = null;
   localStorage.removeItem(ACTIVE_USER_SESSION_KEY);
 
