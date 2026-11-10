@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#070709" />
+  <title>REDLINE FIT | Treino Inteligente & Progressão</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Background Glow Effects -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <!-- TELA DE LOGIN DE ACESSO -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+      <div class="login-brand">
+        <img src="icon-192.png" alt="Ícone REDLINE FIT" class="login-logo-img" />
+        <span class="login-eyebrow">ACESSO AO SISTEMA</span>
+        <h1 class="login-title">REDLINE <span class="text-red">FIT</span></h1>
+        <p class="login-subtitle">Digite seu usuário e senha para acessar seus treinos e progresso.</p>
+      </div>
+
+      <form id="loginForm" class="login-form" autocomplete="off">
+        <div class="input-group">
+          <label for="loginUsername">Usuário</label>
+          <div class="input-wrapper">
+            <input type="text" id="loginUsername" placeholder="Digite seu usuário" required />
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="loginPassword">Senha</label>
+          <div class="input-wrapper">
+            <input type="password" id="loginPassword" placeholder="Digite sua senha" required />
+          </div>
+        </div>
+
+        <div class="login-error hidden" id="loginErrorMsg">
+          ⚠️ Usuário ou senha incorretos.
+        </div>
+
+        <button type="submit" class="btn-primary-red btn-lg login-submit-btn">
+          <span>ENTRAR</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <div class="brand-logo">
+          <img src="icon-192.png" alt="Ícone REDLINE FIT" class="brand-logo-img" />
+        </div>
+        <div>
+          <span class="brand-title">REDLINE <span class="text-red">FIT</span></span>
+          <span class="brand-subtitle">SISTEMA DE TREINO & PROGRESSÃO</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="active-user-pill" id="activeUserPill" title="Usuário conectado">
+          <span class="user-dot"></span>
+          <span id="headerActiveUserName">Atleta</span>
+        </div>
+
+        <div class="streak-badge" id="streakBadge" title="Treinos concluídos">
+          <svg viewBox="0 0 24 24" fill="currentColor" class="icon-flame">
+            <path d="M12 2c1.5 3.5 4 5.5 4 9a4 4 0 1 1-8 0c0-1.5.5-3 1.5-4.5C9.5 8 10.5 9 12 9c-1-2.5-.5-5 0-7z"/>
+            <path d="M12 22a8 8 0 0 0 8-8c0-4.5-3-7.5-5-10-.5 2.5-2 4-3 4s-2.5-1.5-3-4c-2 2.5-5 5.5-5 10a8 8 0 0 0 8 8z" opacity="0.35"/>
+          </svg>
+          <span id="completedWorkoutsCount">0</span> <span class="hide-mobile">Treinos</span>
+        </div>
+
+        <button class="btn-outline-red btn-sm" id="btnEditProfile" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+          <span class="hide-mobile">Meu Perfil / Medidas</span>
+        </button>
+
+        <button class="btn-secondary-dark btn-sm btn-logout-header" id="btnLogout" type="button" title="Sair ou trocar entre Simone e Mateus">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span>Sair</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main-content">
+    <!-- STEP 1 / MODAL OR COLLAPSIBLE SETUP PANEL: DADOS DO USUÁRIO E PREFERÊNCIAS -->
+    <section class="setup-section" id="setupSection">
+      <div class="setup-card">
+        <div class="setup-header">
+          <div>
+            <span class="section-tag">PASSO 1 • CONFIGURAÇÃO PERSONALIZADA</span>
+            <h1 class="setup-title">Monte seu Plano de Treino</h1>
+            <p class="setup-desc">Informe seu peso, altura e onde deseja treinar para gerarmos a sugestão ideal para o seu corpo.</p>
+          </div>
+          <button type="button" class="btn-close-setup hidden" id="btnCloseSetup" aria-label="Fechar configuração">✕</button>
+        </div>
+
+        <form id="profileForm" class="setup-form">
+          <!-- Nome, Peso e Altura -->
+          <div class="form-grid-3">
+            <div class="input-group">
+              <label for="userName">Seu Nome (Opcional)</label>
+              <div class="input-wrapper">
+                <input type="text" id="userName" placeholder="Ex: Alex" maxlength="30" />
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label for="userWeight">Peso Atual (kg) *</label>
+              <div class="input-wrapper">
+                <input type="number" id="userWeight" placeholder="Ex: 78.5" min="25" max="300" step="0.1" required />
+                <span class="input-unit">kg</span>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label for="userHeight">Altura (cm) *</label>
+              <div class="input-wrapper">
+                <input type="number" id="userHeight" placeholder="Ex: 175" min="100" max="250" step="1" required />
+                <span class="input-unit">cm</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preview IMC em Tempo Real -->
+          <div class="imc-live-banner" id="imcLiveBanner">
+            <div class="imc-live-left">
+              <span class="imc-label">SEU IMC CALCULADO</span>
+              <div class="imc-value-row">
+                <strong class="imc-number" id="liveImcValue">--</strong>
+                <span class="imc-badge" id="liveImcClassification">Preencha peso e altura</span>
+              </div>
+            </div>
+            <div class="imc-live-right" id="liveImcRecommendation">
+              Digite seu peso e altura acima para ver a análise corporal e o treino recomendado.
+            </div>
+          </div>
+
+          <!-- Escolha do Gênero / Biotipo de Treino -->
+          <div class="choice-block">
+            <div class="choice-header-row">
+              <label class="choice-label">Qual o seu gênero? *</label>
+              <span class="suggested-pill">Baseado nos protocolos Hipertrofia.org, Treino Mestre & MuscleWiki</span>
+            </div>
+            <div class="location-cards">
+              <label class="location-card" id="cardGenderMale">
+                <input type="radio" name="workoutGender" value="male" checked />
+                <div class="location-card-content">
+                  <div class="location-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                      <circle cx="10" cy="14" r="5"/>
+                      <path d="M19 5l-5.4 5.4"/>
+                      <path d="M15 5h4v4"/>
+                    </svg>
+                  </div>
+                  <div class="location-info">
+                    <strong>Masculino (Divisão PPL / Upper-Lower)</strong>
+                    <span>Ênfase em simetria em "V" (Peitoral, Dorsal larga, Deltoides, Braços) + Pernas completas e Core.</span>
+                  </div>
+                  <div class="radio-indicator"></div>
+                </div>
+              </label>
+
+              <label class="location-card" id="cardGenderFemale">
+                <input type="radio" name="workoutGender" value="female" />
+                <div class="location-card-content">
+                  <div class="location-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                      <circle cx="12" cy="9" r="5"/>
+                      <path d="M12 14v7"/>
+                      <path d="M9 18h6"/>
+                    </svg>
+                  </div>
+                  <div class="location-info">
+                    <strong>Feminino (Divisão Lower/Upper 2x)</strong>
+                    <span>Ênfase em Glúteos (Máximo e Médio), Quadríceps, Posteriores de Coxa, Cintura/Core e Superiores tonificados.</span>
+                  </div>
+                  <div class="radio-indicator"></div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Escolha do Local: Casa sem equipamento vs Academia -->
+          <div class="choice-block">
+            <label class="choice-label">Onde você vai treinar? *</label>
+            <div class="location-cards">
+              <label class="location-card" id="cardLocHome">
+                <input type="radio" name="workoutLocation" value="home" checked />
+                <div class="location-card-content">
+                  <div class="location-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                      <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                  </div>
+                  <div class="location-info">
+                    <strong>Em Casa (Sem Equipamento)</strong>
+                    <span>Exercícios com peso do próprio corpo (Calistenia, HIIT, Core e Força funcional).</span>
+                  </div>
+                  <div class="radio-indicator"></div>
+                </div>
+              </label>
+
+              <label class="location-card" id="cardLocGym">
+                <input type="radio" name="workoutLocation" value="gym" />
+                <div class="location-card-content">
+                  <div class="location-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="m6.5 6.5 11 11"/>
+                      <path d="m21 21-1-1"/>
+                      <path d="m3 3 1 1"/>
+                      <path d="m18 22 4-4"/>
+                      <path d="m2 6 4-4"/>
+                      <path d="m3 10 7-7"/>
+                      <path d="m14 21 7-7"/>
+                    </svg>
+                  </div>
+                  <div class="location-info">
+                    <strong>Na Academia (Com Equipamentos)</strong>
+                    <span>Treinos com halteres, barras, polias e máquinas para máxima performance.</span>
+                  </div>
+                  <div class="radio-indicator"></div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Escolha do Objetivo -->
+          <div class="choice-block">
+            <div class="choice-header-row">
+              <label class="choice-label">Qual é o seu objetivo principal?</label>
+              <span class="suggested-pill hidden" id="suggestedGoalHint">Sugerido pelo seu IMC</span>
+            </div>
+            <div class="goal-cards">
+              <label class="goal-card">
+                <input type="radio" name="workoutGoal" value="hypertrophy" checked />
+                <div class="goal-card-inner">
+                  <span class="goal-title">💪 Ganho de Massa & Força</span>
+                  <span class="goal-sub">Foco em hipertrofia, tensão mecânica e construção muscular</span>
+                </div>
+              </label>
+
+              <label class="goal-card">
+                <input type="radio" name="workoutGoal" value="weightloss" />
+                <div class="goal-card-inner">
+                  <span class="goal-title">🔥 Emagrecimento & Definição</span>
+                  <span class="goal-sub">Alto gasto calórico, ritmo intenso e preservação muscular</span>
+                </div>
+              </label>
+
+              <label class="goal-card">
+                <input type="radio" name="workoutGoal" value="conditioning" />
+                <div class="goal-card-inner">
+                  <span class="goal-title">⚡ Condicionamento & Saúde</span>
+                  <span class="goal-sub">Resistência física, mobilidade, energia e fôlego no dia a dia</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary-red btn-lg">
+              <span>GERAR MEU PLANO DE TREINO</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- DASHBOARD DE TREINO E PROGRESSÃO -->
+    <section class="dashboard-section hidden" id="dashboardSection">
+      <!-- Top Summary Cards: Perfil Corporal + Progresso Geral -->
+      <div class="summary-grid">
+        <!-- Card 1: Status Corporal & Modalidade -->
+        <div class="stat-card profile-summary-card">
+          <div class="stat-card-top">
+            <div>
+              <span class="stat-eyebrow" id="dashUserGreeting">ATLETA REDLINE</span>
+              <h2 class="stat-main-title" id="dashPlanTitle">Treino em Casa</h2>
+            </div>
+            <span class="mode-badge" id="dashLocationBadge">EM CASA</span>
+          </div>
+
+          <div class="metrics-strip">
+            <div class="metric-item">
+              <span class="metric-label">GÊNERO</span>
+              <strong class="metric-val metric-status" id="dashGender">--</strong>
+            </div>
+            <div class="metric-divider"></div>
+            <div class="metric-item">
+              <span class="metric-label">PESO</span>
+              <strong class="metric-val" id="dashWeight">-- kg</strong>
+            </div>
+            <div class="metric-divider"></div>
+            <div class="metric-item">
+              <span class="metric-label">ALTURA</span>
+              <strong class="metric-val" id="dashHeight">-- cm</strong>
+            </div>
+            <div class="metric-divider"></div>
+            <div class="metric-item">
+              <span class="metric-label">IMC</span>
+              <strong class="metric-val text-red" id="dashImc">--</strong>
+            </div>
+            <div class="metric-divider"></div>
+            <div class="metric-item">
+              <span class="metric-label">STATUS</span>
+              <strong class="metric-val metric-status" id="dashImcStatus">--</strong>
+            </div>
+          </div>
+
+          <div class="quick-switch-row">
+            <button type="button" class="quick-toggle-btn" id="btnQuickSwitchGender" title="Alternar entre treino Masculino e Feminino">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              <span id="quickSwitchGenderText">Treino Feminino</span>
+            </button>
+            <button type="button" class="quick-toggle-btn" id="btnQuickSwitchLocation" title="Alternar rapidamente entre Casa e Academia">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+              </svg>
+              <span id="quickSwitchText">Mudar para Academia</span>
+            </button>
+            <button type="button" class="quick-toggle-btn" id="btnLogWeight">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+              </svg>
+              <span>Atualizar Peso</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 2: Barra de Progressão do Treino Atual (FEITO vs FALTA) -->
+        <div class="stat-card progress-summary-card">
+          <div class="progress-card-header">
+            <div>
+              <span class="stat-eyebrow" id="progressCardEyebrow">PROGRESSÃO DO DIA SELECIONADO</span>
+              <h3 class="progress-title" id="currentSplitName">Segunda-feira • Treino A</h3>
+            </div>
+            <div class="percentage-circle" id="progressPercentBadge">0%</div>
+          </div>
+
+          <!-- Barra de Progresso Principal -->
+          <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="mainProgressBarTrack">
+            <div class="progress-bar-fill" id="mainProgressBarFill" style="width: 0%"></div>
+          </div>
+
+          <!-- Contadores: Feito vs Falta -->
+          <div class="done-remaining-grid">
+            <div class="status-counter counter-done">
+              <div class="counter-icon">✓</div>
+              <div>
+                <span class="counter-num" id="countDoneExercises">0</span>
+                <span class="counter-label">FEITOS NO DIA</span>
+              </div>
+            </div>
+
+            <div class="status-counter counter-todo">
+              <div class="counter-icon">⏳</div>
+              <div>
+                <span class="counter-num" id="countRemainingExercises">0</span>
+                <span class="counter-label">FALTAM NO DIA</span>
+              </div>
+            </div>
+
+            <div class="status-counter counter-sets">
+              <div class="counter-icon">⚡</div>
+              <div>
+                <span class="counter-num" id="countSetsProgress">0/0</span>
+                <span class="counter-label">SÉRIES FEITAS</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CRONOGRAMA SEMANAL POR DIAS (SEGUNDA A DOMINGO) -->
+      <div class="weekly-schedule-card">
+        <div class="weekly-schedule-header">
+          <div>
+            <span class="stat-eyebrow">CRONOGRAMA DA SEMANA • CONTROLE DIÁRIO (FEZ vs NÃO FEZ)</span>
+            <div class="weekly-title-row">
+              <h3 class="weekly-schedule-title">Seus Treinos por Dia da Semana</h3>
+              <span class="weekly-summary-pill" id="weeklySummaryPill">0 de 7 dias concluídos</span>
+            </div>
+          </div>
+
+          <div class="weekly-schedule-actions">
+            <div class="weekly-legend">
+              <span class="w-legend-item"><i class="w-dot w-dot-done"></i> Fez no dia</span>
+              <span class="w-legend-item"><i class="w-dot w-dot-missed"></i> Não fez</span>
+              <span class="w-legend-item"><i class="w-dot w-dot-pending"></i> Para fazer</span>
+            </div>
+            <button type="button" class="btn-outline-red btn-xs" id="btnResetWeek" title="Limpar progresso de todos os dias para iniciar uma nova semana">
+              Iniciar Nova Semana
+            </button>
+          </div>
+        </div>
+
+        <div class="week-days-grid" id="weekDaysGrid" role="tablist" aria-label="Dias da Semana">
+          <!-- Gerado via JS: Segunda, Terça, Quarta, Quinta, Sexta, Sábado, Domingo -->
+        </div>
+      </div>
+
+      <!-- Barra de Divisão de Treinos (Treino A, B, C, D) + Filtro (Todos / Faltam / Feitos) -->
+      <div class="workout-controls-bar">
+        <div class="split-selector-header">
+          <span class="split-selector-label" id="splitSelectorDayLabel">ESCOLHER TREINO DE SEGUNDA-FEIRA:</span>
+        </div>
+        <div class="split-tabs" id="splitTabs" role="tablist">
+          <!-- Gerado via JS: Treino A, Treino B, Treino C, Treino D -->
+        </div>
+
+        <div class="filter-and-actions">
+          <div class="status-filter-Group" role="group" aria-label="Filtrar exercícios">
+            <button type="button" class="filter-pill active" data-filter="all">
+              Todos do Dia <span class="pill-count" id="pillCountAll">0</span>
+            </button>
+            <button type="button" class="filter-pill filter-pill-todo" data-filter="pending">
+              Ainda Faltam <span class="pill-count" id="pillCountPending">0</span>
+            </button>
+            <button type="button" class="filter-pill filter-pill-done" data-filter="done">
+              Feitos <span class="pill-count" id="pillCountDone">0</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cabeçalho da Ficha Selecionada + Ações Rápidas -->
+      <div class="split-banner" id="splitBannerCard">
+        <div class="split-banner-info">
+          <div class="split-focus-tag" id="splitFocusTag">FOCO MUSCULAR</div>
+          <h2 class="split-banner-title" id="splitBannerTitle">Segunda-feira — Treino A</h2>
+          <p class="split-banner-desc" id="splitBannerDesc">Descrição do treino sugerido.</p>
+        </div>
+
+        <div class="split-banner-actions">
+          <button type="button" class="btn-secondary-dark btn-missed-day" id="btnResetCurrentSplit" title="Marcar que não treinou neste dia ou desmarcar exercícios">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="15" y1="9" x2="9" y2="15"/>
+              <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+            <span id="btnResetDayText">Não Fiz na Segunda</span>
+          </button>
+
+          <button type="button" class="btn-primary-red" id="btnFinishWorkout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            <span id="btnFinishDayText">Concluir Segunda-feira</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- HUD: MAPA CORPORAL MUSCULAR EM SVG (FRENTE & COSTAS) -->
+      <div class="muscle-hud-card" id="muscleHudCard">
+        <div class="muscle-hud-header">
+          <div>
+            <span class="stat-eyebrow">SCANNER BIOMECÂNICO • ATIVAÇÃO MUSCULAR EM TEMPO REAL</span>
+            <h3 class="muscle-hud-title">Mapa Corporal de Músculos Trabalhados</h3>
+          </div>
+          <div class="muscle-hud-legend">
+            <span class="legend-item"><i class="legend-dot dot-active-red"></i> Em Foco (Falta)</span>
+            <span class="legend-item"><i class="legend-dot dot-Secondary-red"></i> Sinergista / Secundário</span>
+            <span class="legend-item"><i class="legend-dot dot-done-green"></i> Músculo Concluído (Feito)</span>
+          </div>
+        </div>
+
+        <div class="muscle-hud-body">
+          <!-- Coluna Esquerda: Figuras Anatômicas Frente & Costas -->
+          <div class="body-scanner-stage">
+            <div class="scanner-grid-bg"></div>
+            <div class="scanner-line"></div>
+
+            <div class="body-figures-wrap">
+              <!-- VISÃO FRONTAL -->
+              <div class="body-figure-col">
+                <span class="body-view-label">VISÃO FRONTAL</span>
+                <svg class="body-svg" viewBox="0 0 200 420" xmlns="http://www.w3.org/2000/svg" aria-label="Mapa Muscular Frontal">
+                  <defs>
+                    <filter id="redNeonGlow" x="-30%" y="-30%" width="160%" height="160%">
+                      <feGaussianBlur stdDeviation="3.5" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+
+                  <!-- Silhueta Base / Cabeça, Pescoço, Mãos e Pés -->
+                  <g class="body-base-frame">
+                    <circle cx="100" cy="30" r="18" />
+                    <path d="M92,48 L108,48 L110,60 L90,60 Z" />
+                    <!-- Mãos -->
+                    <ellipse cx="32" cy="212" rx="6" ry="10" transform="rotate(12 32 212)" />
+                    <ellipse cx="168" cy="212" rx="6" ry="10" transform="rotate(-12 168 212)" />
+                    <!-- Pés -->
+                    <path d="M68,390 L84,390 L86,404 L62,404 Z" />
+                    <path d="M116,390 L132,390 L138,404 L114,404 Z" />
+                  </g>
+
+                  <!-- TRAPÉZIO (FRONTAL) -->
+                  <g class="muscle-zone" data-muscle="trapezio">
+                    <title>Trapézio</title>
+                    <polygon points="90,56 70,66 86,70 92,58" />
+                    <polygon points="110,56 130,66 114,70 108,58" />
+                  </g>
+
+                  <!-- OMBROS / DELTOIDES (FRONTAL) -->
+                  <g class="muscle-zone" data-muscle="ombros">
+                    <title>Ombros (Deltoides)</title>
+                    <path d="M68,66 C53,70 48,86 52,102 L68,96 L72,72 Z" />
+                    <path d="M132,66 C147,70 152,86 148,102 L132,96 L128,72 Z" />
+                  </g>
+
+                  <!-- PEITORAL -->
+                  <g class="muscle-zone" data-muscle="peitoral">
+                    <title>Peitoral</title>
+                    <path d="M72,70 L98,72 L98,108 L74,106 C68,96 68,82 72,70 Z" />
+                    <path d="M128,70 L102,72 L102,108 L126,106 C132,96 132,82 128,70 Z" />
+                  </g>
+
+                  <!-- BÍCEPS -->
+                  <g class="muscle-zone" data-muscle="biceps">
+                    <title>Bíceps</title>
+                    <path d="M51,104 L66,99 L63,142 L45,140 C44,124 46,114 51,104 Z" />
+                    <path d="M149,104 L134,99 L137,142 L155,140 C156,124 154,114 149,104 Z" />
+                  </g>
+
+                  <!-- ANTEBRAÇOS (FRONTAL) -->
+                  <g class="muscle-zone" data-muscle="antebraco">
+                    <title>Antebraços</title>
+                    <path d="M44,144 L61,146 L42,200 L31,196 Z" />
+                    <path d="M156,144 L139,146 L158,200 L169,196 Z" />
+                  </g>
+
+                  <!-- ABDÔMEN & CORE (RETO ABDOMINAL + OBLÍQUOS) -->
+                  <g class="muscle-zone" data-muscle="abdomen">
+                    <title>Abdômen & Core</title>
+                    <!-- Gomos superiores, médios e inferiores + oblíquos -->
+                    <rect x="85" y="111" width="13" height="16" rx="3" />
+                    <rect x="102" y="111" width="13" height="16" rx="3" />
+                    <rect x="85" y="130" width="13" height="16" rx="3" />
+                    <rect x="102" y="130" width="13" height="16" rx="3" />
+                    <rect x="86" y="149" width="12" height="18" rx="3" />
+                    <rect x="102" y="149" width="12" height="18" rx="3" />
+                    <!-- Oblíquos laterais -->
+                    <path d="M74,109 L82,112 L83,168 L72,164 C69,145 70,126 74,109 Z" />
+                    <path d="M126,109 L118,112 L117,168 L128,164 C131,145 130,126 126,109 Z" />
+                  </g>
+
+                  <!-- QUADRÍCEPS (COXA FRONTAL) -->
+                  <g class="muscle-zone" data-muscle="quadriceps">
+                    <title>Quadríceps (Coxas)</title>
+                    <!-- Perna Esquerda -->
+                    <path d="M71,172 L97,176 L94,282 L68,280 C62,240 63,205 71,172 Z" />
+                    <!-- Perna Direita -->
+                    <path d="M129,172 L103,176 L106,282 L132,280 C138,240 137,205 129,172 Z" />
+                  </g>
+
+                  <!-- PANTURRILHAS (FRONTAL) -->
+                  <g class="muscle-zone" data-muscle="panturrilhas">
+                    <title>Panturrilhas</title>
+                    <path d="M69,290 L91,290 L85,385 L71,385 C64,350 64,320 69,290 Z" />
+                    <path d="M131,290 L109,290 L115,385 L129,385 C136,350 136,320 131,290 Z" />
+                  </g>
+                </svg>
+              </div>
+
+              <!-- VISÃO POSTERIOR (COSTAS) -->
+              <div class="body-figure-col">
+                <span class="body-view-label">VISÃO POSTERIOR</span>
+                <svg class="body-svg" viewBox="0 0 200 420" xmlns="http://www.w3.org/2000/svg" aria-label="Mapa Muscular Posterior">
+                  <!-- Silhueta Base -->
+                  <g class="body-base-frame">
+                    <circle cx="100" cy="30" r="18" />
+                    <path d="M92,48 L108,48 L110,58 L90,58 Z" />
+                    <ellipse cx="32" cy="212" rx="6" ry="10" transform="rotate(12 32 212)" />
+                    <ellipse cx="168" cy="212" rx="6" ry="10" transform="rotate(-12 168 212)" />
+                    <path d="M68,390 L84,390 L86,404 L62,404 Z" />
+                    <path d="M116,390 L132,390 L138,404 L114,404 Z" />
+                  </g>
+
+                  <!-- TRAPÉZIO (POSTERIOR COMPLETO) -->
+                  <g class="muscle-zone" data-muscle="trapezio">
+                    <title>Trapézio & Alto das Costas</title>
+                    <polygon points="100,56 72,66 86,105 100,115 114,105 128,66" />
+                  </g>
+
+                  <!-- OMBROS POSTERIORES -->
+                  <g class="muscle-zone" data-muscle="ombros">
+                    <title>Deltoide Posterior (Ombros)</title>
+                    <path d="M70,66 C54,70 49,85 52,100 L69,95 L73,72 Z" />
+                    <path d="M130,66 C146,70 151,85 148,100 L131,95 L127,72 Z" />
+                  </g>
+
+                  <!-- GRANDE DORSAL (COSTAS) -->
+                  <g class="muscle-zone" data-muscle="dorsal">
+                    <title>Grande Dorsal (Costas)</title>
+                    <path d="M73,76 L85,107 L97,145 L75,142 C68,120 68,96 73,76 Z" />
+                    <path d="M127,76 L115,107 L103,145 L125,142 C132,120 132,96 127,76 Z" />
+                  </g>
+
+                  <!-- TRÍCEPS -->
+                  <g class="muscle-zone" data-muscle="triceps">
+                    <title>Tríceps Braquial</title>
+                    <path d="M51,102 L67,97 L63,142 L45,140 C44,124 46,112 51,102 Z" />
+                    <path d="M149,102 L133,97 L137,142 L155,140 C156,124 154,112 149,102 Z" />
+                  </g>
+
+                  <!-- ANTEBRAÇOS (POSTERIOR) -->
+                  <g class="muscle-zone" data-muscle="antebraco">
+                    <title>Antebraços</title>
+                    <path d="M44,144 L61,146 L42,200 L31,196 Z" />
+                    <path d="M156,144 L139,146 L158,200 L169,196 Z" />
+                  </g>
+
+                  <!-- LOMBAR (ERETORES DA ESPINHA) -->
+                  <g class="muscle-zone" data-muscle="lombar">
+                    <title>Lombar & Core Posterior</title>
+                    <polygon points="77,144 123,144 119,170 81,170" />
+                  </g>
+
+                  <!-- GLÚTEOS -->
+                  <g class="muscle-zone" data-muscle="gluteos">
+                    <title>Glúteos</title>
+                    <path d="M76,172 L99,172 L99,212 L70,208 C66,194 69,180 76,172 Z" />
+                    <path d="M124,172 L101,172 L101,212 L130,208 C134,194 131,180 124,172 Z" />
+                  </g>
+
+                  <!-- POSTERIOR DE COXA (ISQUIOTIBIAIS) -->
+                  <g class="muscle-zone" data-muscle="posterior">
+                    <title>Posterior de Coxa (Isquiotibiais)</title>
+                    <path d="M70,212 L96,215 L93,285 L69,283 C64,255 65,232 70,212 Z" />
+                    <path d="M130,212 L104,215 L107,285 L131,283 C136,255 135,232 130,212 Z" />
+                  </g>
+
+                  <!-- PANTURRILHAS (POSTERIOR) -->
+                  <g class="muscle-zone" data-muscle="panturrilhas">
+                    <title>Panturrilhas (Gastrocnêmio & Sóleo)</title>
+                    <path d="M68,290 L92,290 L85,385 L71,385 C63,345 63,318 68,290 Z" />
+                    <path d="M132,290 L108,290 L115,385 L129,385 C137,345 137,318 132,290 Z" />
+                  </g>
+                </svg>
+              </div>
+            </div>
+
+            <div class="scanner-status-bar" id="scannerStatusBar">
+              <span class="scanner-pulse-dot"></span>
+              <span id="scannerStatusText">Passe o mouse sobre um exercício ou clique em um músculo para inspecionar</span>
+            </div>
+          </div>
+
+          <!-- Coluna Direita: Relatório Tático de Grupos Musculares Ativados -->
+          <div class="muscle-breakdown-panel">
+            <div class="breakdown-top">
+              <span class="breakdown-subtitle">DIAGNÓSTICO DE CARGA MUSCULAR DO TREINO</span>
+              <p class="breakdown-helper">Conforme você marca os exercícios como <strong>FEITO</strong>, o mapa muscular atualiza o status de cada região corporal.</p>
+            </div>
+
+            <div class="muscle-bars-list" id="muscleBarsList">
+              <!-- Preenchido dinamicamente pelo JS com barras de ativação por músculo -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de Exercícios -->
+      <div class="exercises-list" id="exercisesList">
+        <!-- Cards de exercícios injetados via JS -->
+      </div>
+
+      <!-- Seção de Progressão Geral & Histórico de Evolução -->
+      <div class="progression-section">
+        <div class="progression-grid">
+          <!-- Evolução de Peso e Meta -->
+          <div class="prog-card">
+            <div class="prog-card-header">
+              <div>
+                <span class="stat-eyebrow">ACOMPANHAMENTO CORPORAL</span>
+                <h3>Evolução de Peso & IMC</h3>
+              </div>
+              <button type="button" class="btn-outline-red btn-xs" id="btnAddWeightEntry">+ Novo Registro</button>
+            </div>
+            <p class="prog-card-sub" id="weightProgressionSummary">
+              Registre seu peso periodicamente para acompanhar sua evolução.
+            </p>
+            <div class="weight-history-list" id="weightHistoryList">
+              <!-- Histórico de peso -->
+            </div>
+          </div>
+
+          <!-- Histórico de Treinos Finalizados -->
+          <div class="prog-card">
+            <div class="prog-card-header">
+              <div>
+                <span class="stat-eyebrow">CONSISTÊNCIA E DISCIPLINA</span>
+                <h3>Histórico de Treinos Concluídos</h3>
+              </div>
+              <button type="button" class="btn-text-muted btn-xs" id="btnClearHistory">Limpar histórico</button>
+            </div>
+            <p class="prog-card-sub">
+              Cada treino finalizado fica salvo abaixo para você acompanhar sua constância.
+            </p>
+            <div class="workout-history-list" id="workoutHistoryList">
+              <!-- Histórico de treinos -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Barra Flutuante de Cronômetro de Descanso -->
+  <div class="rest-timer-bar hidden" id="restTimerBar">
+    <div class="rest-timer-info">
+      <span class="rest-dot"></span>
+      <div>
+        <strong id="restTimerLabel">Descanso entre séries</strong>
+        <span id="restTimerExercise">Prepare-se para a próxima série</span>
+      </div>
+    </div>
+    <div class="rest-timer-controls">
+      <span class="rest-countdown" id="restTimerCountdown">01:00</span>
+      <button type="button" class="btn-timer-adj" id="btnTimerAdd15">+15s</button>
+      <button type="button" class="btn-timer-skip" id="btnTimerStop">Pular</button>
+    </div>
+  </div>
+
+  <!-- Modal Rápido para Atualizar Peso -->
+  <div class="modal-backdrop hidden" id="weightModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Registrar Novo Peso</h3>
+        <button type="button" class="btn-close-modal" id="btnCloseWeightModal">✕</button>
+      </div>
+      <form id="weightUpdateForm">
+        <p class="modal-desc">Atualize seu peso atual para recalcular seu IMC e registrar sua progressão corporal.</p>
+        <div class="input-group">
+          <label for="newWeightInput">Novo Peso (kg)</label>
+          <div class="input-wrapper">
+            <input type="number" id="newWeightInput" step="0.1" min="25" max="300" required />
+            <span class="input-unit">kg</span>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary-dark" id="btnCancelWeightModal">Cancelar</button>
+          <button type="submit" class="btn-primary-red">Salvar Peso</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de Vídeo Explicativo & Guia de Execução do Exercício -->
+  <div class="modal-backdrop hidden" id="videoModal">
+    <div class="modal-box video-modal-box">
+      <div class="modal-header video-modal-header">
+        <div>
+          <span class="stat-eyebrow" id="videoModalMuscleTag">MÚSCULO ALVO</span>
+          <h3 id="videoModalTitle">Como Executar o Exercício</h3>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseVideoModal" aria-label="Fechar vídeo">✕</button>
+      </div>
+
+      <div class="video-modal-body">
+        <!-- Player de Vídeo Explicativo (YouTube Embed) -->
+        <div class="video-frame-wrapper">
+          <iframe
+            id="videoPlayerIframe"
+            src=""
+            title="Vídeo Explicativo do Exercício"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+          ></iframe>
+        </div>
+
+        <!-- Guia Passo a Passo + Simulador Biomecânico de Movimento -->
+        <div class="execution-guide-grid">
+          <div class="biomech-preview-box">
+            <span class="biomech-label">VETOR BIOMECÂNICO</span>
+            <div class="biomech-svg-stage" id="biomechSvgStage">
+              <!-- Animação vetorial gerada via JS -->
+            </div>
+            <span class="biomech-cadence" id="biomechCadenceText">Cadência: 2s descida • 1s subida</span>
+          </div>
+
+          <div class="execution-steps-box">
+            <span class="biomech-label">PASSO A PASSO DA EXECUÇÃO CORRETA</span>
+            <ul class="execution-steps-list" id="videoExecutionSteps">
+              <!-- Passos de execução injetados via JS -->
+            </ul>
+            <div class="execution-tip-highlight" id="videoModalTipBox">
+              <!-- Dica principal -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions video-modal-footer">
+        <a href="#" target="_blank" rel="noopener noreferrer" class="btn-secondary-dark" id="btnOpenYoutubeExternal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          <span>Abrir no YouTube</span>
+        </a>
+        <button type="button" class="btn-primary-red" id="btnGotItVideoModal">Entendi a Execução</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast de Notificação -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
