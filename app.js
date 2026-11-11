@@ -2775,10 +2775,19 @@ function renderDashboard() {
     btn.classList.toggle('active', btn.dataset.filter === appState.activeFilter);
   });
 
-  // Banner do Dia e Treino Selecionado
-  document.getElementById('splitFocusTag').textContent = `📅 ${dayObj.label.toUpperCase()} • STATUS: ${daySummary.statusLabel} • ${split.focus}`;
-  document.getElementById('splitBannerTitle').textContent = `${dayObj.label}: ${split.title}`;
-  document.getElementById('splitBannerDesc').textContent = split.description;
+  // Banner do Dia e Treino Selecionado (se presente na tela)
+  const splitFocusTag = document.getElementById('splitFocusTag');
+  if (splitFocusTag) {
+    splitFocusTag.textContent = `📅 ${dayObj.label.toUpperCase()} • STATUS: ${daySummary.statusLabel} • ${split.focus}`;
+  }
+  const splitBannerTitle = document.getElementById('splitBannerTitle');
+  if (splitBannerTitle) {
+    splitBannerTitle.textContent = `${dayObj.label}: ${split.title}`;
+  }
+  const splitBannerDesc = document.getElementById('splitBannerDesc');
+  if (splitBannerDesc) {
+    splitBannerDesc.textContent = split.description;
+  }
 
   const btnResetDayText = document.getElementById('btnResetDayText');
   if (btnResetDayText) {
@@ -3833,15 +3842,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Marcar dia selecionado como "Não Fiz" / Reiniciar dia atual
-  document.getElementById('btnResetCurrentSplit').addEventListener('click', () => {
-    markDayAsMissedOrReset(appState.activeDayKey);
-  });
+  // Marcar dia selecionado como "Não Fiz" / Reiniciar dia atual (se presente na tela)
+  const btnResetCurrentSplit = document.getElementById('btnResetCurrentSplit');
+  if (btnResetCurrentSplit) {
+    btnResetCurrentSplit.addEventListener('click', () => {
+      markDayAsMissedOrReset(appState.activeDayKey);
+    });
+  }
 
-  // Concluir dia selecionado e registrar no Histórico
-  document.getElementById('btnFinishWorkout').addEventListener('click', () => {
-    completeAllExercisesForDay(appState.activeDayKey);
-  });
+  // Concluir dia selecionado e registrar no Histórico (se presente na tela)
+  const btnFinishWorkout = document.getElementById('btnFinishWorkout');
+  if (btnFinishWorkout) {
+    btnFinishWorkout.addEventListener('click', () => {
+      completeAllExercisesForDay(appState.activeDayKey);
+    });
+  }
 
   // Modal de Atualizar Peso
   const weightModal = document.getElementById('weightModal');
